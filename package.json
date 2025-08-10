@@ -1,0 +1,42 @@
+{
+  "name": "pocket-prompt",
+  "version": "1.0.0",
+  "description": "Chrome extension for seamless prompt management and sharing",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build:watch": "vite build --watch",
+    "dev": "vite",
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --apply ./src",
+    "format": "biome format --write ./src",
+    "format:check": "biome format ./src",
+    "type-check": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean"
+  },
+  "keywords": [
+    "chrome-extension",
+    "prompt-management",
+    "ai-tools",
+    "productivity"
+  ],
+  "author": "ekity1002",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.3",
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^20.14.15",
+    "rimraf": "^5.0.10",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.0",
+    "@vitejs/plugin-react": "^4.3.1"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=20.18.0"
+  },
+  "volta": {
+    "node": "20.19.4"
+  }
+}
