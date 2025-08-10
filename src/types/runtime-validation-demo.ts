@@ -15,7 +15,7 @@ import {
 } from './index';
 
 console.log('🔍 Pocket-Prompt Type Guards Runtime Validation Demo');
-console.log('=' .repeat(60));
+console.log('='.repeat(60));
 
 // Test 1: Valid Prompt Validation
 console.log('\n📝 Test 1: Valid Prompt Validation');
@@ -46,27 +46,40 @@ const invalidPrompt = {
 };
 
 console.log('Invalid prompt object:', JSON.stringify(invalidPrompt, null, 2));
-console.log('isPrompt() result:', isPrompt(invalidPrompt) ? '❌ FAIL (should reject)' : '✅ PASS (correctly rejected)');
+console.log(
+  'isPrompt() result:',
+  isPrompt(invalidPrompt) ? '❌ FAIL (should reject)' : '✅ PASS (correctly rejected)'
+);
 
 // Test 3: AI Site Validation
 console.log('\n🤖 Test 3: AI Site Validation');
 const testSites = ['chatgpt', 'claude', 'gemini', 'invalid-site', 123, null];
-testSites.forEach(site => {
+testSites.forEach((site) => {
   const result = isSupportedAISite(site);
-  const status = (typeof site === 'string' && POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES.includes(site as any)) 
-    ? (result ? '✅ PASS' : '❌ FAIL') 
-    : (result ? '❌ FAIL' : '✅ PASS');
+  const status =
+    typeof site === 'string' && POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES.includes(site as any)
+      ? result
+        ? '✅ PASS'
+        : '❌ FAIL'
+      : result
+        ? '❌ FAIL'
+        : '✅ PASS';
   console.log(`${site}: ${status}`);
 });
 
 // Test 4: Export Format Validation
 console.log('\n📤 Test 4: Export Format Validation');
 const testFormats = ['markdown', 'json', 'txt', 'csv', 'pdf', 'xml', null];
-testFormats.forEach(format => {
+testFormats.forEach((format) => {
   const result = isExportFormat(format);
-  const status = (typeof format === 'string' && POCKET_PROMPT_CONSTANTS.EXPORT_FORMATS.includes(format as any)) 
-    ? (result ? '✅ PASS' : '❌ FAIL') 
-    : (result ? '❌ FAIL' : '✅ PASS');
+  const status =
+    typeof format === 'string' && POCKET_PROMPT_CONSTANTS.EXPORT_FORMATS.includes(format as any)
+      ? result
+        ? '✅ PASS'
+        : '❌ FAIL'
+      : result
+        ? '❌ FAIL'
+        : '✅ PASS';
   console.log(`${format}: ${status}`);
 });
 
@@ -115,12 +128,14 @@ console.log('Generated prompt ID:', newPromptId);
 // Test 8: Constants Verification
 console.log('\n🔧 Test 8: Constants Verification');
 console.log('Storage limits:');
-console.log(`  MAX_STORAGE_SIZE: ${POCKET_PROMPT_CONSTANTS.MAX_STORAGE_SIZE} bytes (${POCKET_PROMPT_CONSTANTS.MAX_STORAGE_SIZE / (1024 * 1024)}MB)`);
+console.log(
+  `  MAX_STORAGE_SIZE: ${POCKET_PROMPT_CONSTANTS.MAX_STORAGE_SIZE} bytes (${POCKET_PROMPT_CONSTANTS.MAX_STORAGE_SIZE / (1024 * 1024)}MB)`
+);
 console.log(`  MAX_PROMPTS_COUNT: ${POCKET_PROMPT_CONSTANTS.MAX_PROMPTS_COUNT}`);
 console.log(`  MAX_PROMPT_CONTENT_LENGTH: ${POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH}`);
 
 console.log('\nSupported AI Sites:');
-POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES.forEach(site => {
+POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES.forEach((site) => {
   const siteConfig = POCKET_PROMPT_CONSTANTS.SITE_SELECTORS[site];
   console.log(`  ${site}: ${siteConfig.url}`);
 });

@@ -1,11 +1,7 @@
 // Core business logic for AI site connectivity
 // Handles integration with various AI chat platforms
 
-import type { 
-  SupportedAISite, 
-  AISiteInfo,
-  TextInsertionOptions 
-} from '@/types';
+import type { SupportedAISite, AISiteInfo, TextInsertionOptions } from '@/types';
 
 /**
  * Core AI Site Connector Service
@@ -24,12 +20,12 @@ export class AISiteConnector {
       this.currentSite = 'chatgpt';
       return 'chatgpt';
     }
-    
+
     if (hostname.includes('claude.ai')) {
       this.currentSite = 'claude';
       return 'claude';
     }
-    
+
     if (hostname.includes('gemini.google.com')) {
       this.currentSite = 'gemini';
       return 'gemini';
@@ -140,7 +136,8 @@ export class AISiteConnector {
    */
   private async findInputElement(siteInfo: AISiteInfo): Promise<Element | null> {
     // Wait for element to be available
-    for (let i = 0; i < 30; i++) { // 3 seconds max
+    for (let i = 0; i < 30; i++) {
+      // 3 seconds max
       const element = document.querySelector(siteInfo.textareaSelector);
       if (element) {
         return element;
@@ -154,8 +151,8 @@ export class AISiteConnector {
    * Insert text into textarea element
    */
   private async insertIntoTextarea(
-    textarea: HTMLTextAreaElement, 
-    text: string, 
+    textarea: HTMLTextAreaElement,
+    text: string,
     options: TextInsertionOptions
   ): Promise<void> {
     const currentValue = textarea.value;
@@ -179,9 +176,7 @@ export class AISiteConnector {
     textarea.dispatchEvent(new Event('change', { bubbles: true }));
 
     // Set cursor position
-    const newCursorPosition = options.append 
-      ? newValue.length 
-      : cursorPosition + text.length;
+    const newCursorPosition = options.append ? newValue.length : cursorPosition + text.length;
     textarea.setSelectionRange(newCursorPosition, newCursorPosition);
     textarea.focus();
   }
@@ -190,8 +185,8 @@ export class AISiteConnector {
    * Insert text into contenteditable element
    */
   private async insertIntoContentEditable(
-    element: Element, 
-    text: string, 
+    element: Element,
+    text: string,
     options: TextInsertionOptions
   ): Promise<void> {
     const selection = window.getSelection();
@@ -206,7 +201,7 @@ export class AISiteConnector {
       range.deleteContents();
       const textNode = document.createTextNode(text);
       range.insertNode(textNode);
-      
+
       // Move cursor to end of inserted text
       range.setStartAfter(textNode);
       range.setEndAfter(textNode);
@@ -220,7 +215,7 @@ export class AISiteConnector {
     // Trigger events
     element.dispatchEvent(new Event('input', { bubbles: true }));
     element.dispatchEvent(new Event('change', { bubbles: true }));
-    
+
     // Focus element
     if (element instanceof HTMLElement) {
       element.focus();
@@ -231,6 +226,6 @@ export class AISiteConnector {
    * Wait utility function
    */
   private wait(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

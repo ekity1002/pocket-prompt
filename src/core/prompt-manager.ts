@@ -1,7 +1,12 @@
 // Core business logic for prompt management
 // This module handles all prompt-related operations following Clean Architecture principles
 
-import type { Prompt, CreatePromptRequest, UpdatePromptRequest, PromptSearchOptions } from '@/types';
+import type {
+  Prompt,
+  CreatePromptRequest,
+  UpdatePromptRequest,
+  PromptSearchOptions,
+} from '@/types';
 
 /**
  * Core Prompt Management Service
@@ -22,7 +27,7 @@ export class PromptManager {
     if (!request.title.trim()) {
       throw new Error('Prompt title is required');
     }
-    
+
     if (!request.content.trim()) {
       throw new Error('Prompt content is required');
     }
@@ -174,7 +179,7 @@ export class PromptManager {
     };
 
     const result = await this.searchPrompts(searchOptions);
-    return result.prompts.filter(p => p.metadata.lastUsedAt);
+    return result.prompts.filter((p) => p.metadata.lastUsedAt);
   }
 
   /**

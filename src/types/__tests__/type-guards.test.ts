@@ -63,18 +63,18 @@ describe('Type Guards', () => {
         123,
         {},
         { id: 'test' }, // Missing required fields
-        { 
-          id: 'test', 
-          title: 'Test', 
-          content: 'Test', 
+        {
+          id: 'test',
+          title: 'Test',
+          content: 'Test',
           tags: 'not-array', // Invalid tags type
-          createdAt: '2024-01-01', 
+          createdAt: '2024-01-01',
           updatedAt: '2024-01-01',
-          metadata: {}
+          metadata: {},
         },
       ];
 
-      invalidPrompts.forEach(invalid => {
+      invalidPrompts.forEach((invalid) => {
         expect(isPrompt(invalid)).toBe(false);
       });
     });
@@ -115,7 +115,7 @@ describe('Type Guards', () => {
         { usageCount: 0 }, // Missing required isFavorite
       ];
 
-      invalidMetadata.forEach(invalid => {
+      invalidMetadata.forEach((invalid) => {
         expect(isPromptMetadata(invalid)).toBe(false);
       });
     });
@@ -178,7 +178,7 @@ describe('Type Guards', () => {
         { theme: 'light', language: 'en' }, // Missing features
       ];
 
-      invalidSettings.forEach(invalid => {
+      invalidSettings.forEach((invalid) => {
         expect(isUserSettings(invalid)).toBe(false);
       });
     });
@@ -205,7 +205,7 @@ describe('Type Guards', () => {
         { tagManagement: true }, // Missing required fields
       ];
 
-      invalidFlags.forEach(invalid => {
+      invalidFlags.forEach((invalid) => {
         expect(isFeatureFlags(invalid)).toBe(false);
       });
     });
@@ -227,7 +227,9 @@ describe('Validation Functions', () => {
     it('should reject content that exceeds length limit', () => {
       const longContent = 'a'.repeat(POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH + 1);
       const errors = validatePromptContent(longContent);
-      expect(errors).toContain(`Prompt content cannot exceed ${POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH} characters`);
+      expect(errors).toContain(
+        `Prompt content cannot exceed ${POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH} characters`
+      );
     });
   });
 
@@ -256,9 +258,14 @@ describe('Validation Functions', () => {
     });
 
     it('should reject too many tags', () => {
-      const tooManyTags = Array.from({ length: POCKET_PROMPT_CONSTANTS.MAX_TAG_COUNT + 1 }, (_, i) => `tag${i}`);
+      const tooManyTags = Array.from(
+        { length: POCKET_PROMPT_CONSTANTS.MAX_TAG_COUNT + 1 },
+        (_, i) => `tag${i}`
+      );
       const errors = validateTags(tooManyTags);
-      expect(errors).toContain(`Cannot have more than ${POCKET_PROMPT_CONSTANTS.MAX_TAG_COUNT} tags`);
+      expect(errors).toContain(
+        `Cannot have more than ${POCKET_PROMPT_CONSTANTS.MAX_TAG_COUNT} tags`
+      );
     });
 
     it('should reject empty tags', () => {
@@ -268,7 +275,7 @@ describe('Validation Functions', () => {
 
     it('should reject tags with invalid characters', () => {
       const errors = validateTags(['valid', 'invalid@tag', 'another']);
-      expect(errors).toContain('Tag \"invalid@tag\" contains invalid characters');
+      expect(errors).toContain('Tag "invalid@tag" contains invalid characters');
     });
 
     it('should reject duplicate tags', () => {
@@ -279,7 +286,9 @@ describe('Validation Functions', () => {
     it('should reject tags that exceed length limit', () => {
       const longTag = 'a'.repeat(POCKET_PROMPT_CONSTANTS.MAX_TAG_LENGTH + 1);
       const errors = validateTags([longTag]);
-      expect(errors).toContain(`Tag \"${longTag}\" exceeds ${POCKET_PROMPT_CONSTANTS.MAX_TAG_LENGTH} characters`);
+      expect(errors).toContain(
+        `Tag \"${longTag}\" exceeds ${POCKET_PROMPT_CONSTANTS.MAX_TAG_LENGTH} characters`
+      );
     });
   });
 
@@ -304,7 +313,7 @@ describe('Validation Functions', () => {
         { title: 'Valid Title', content: 'Valid content', tags: [''] }, // Empty tag
       ];
 
-      invalidRequests.forEach(invalid => {
+      invalidRequests.forEach((invalid) => {
         expect(validateCreatePromptRequest(invalid)).toBe(false);
       });
     });
@@ -372,7 +381,7 @@ describe('Constants', () => {
   });
 
   it('should have site selectors for all supported AI sites', () => {
-    POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES.forEach(site => {
+    POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES.forEach((site) => {
       expect(POCKET_PROMPT_CONSTANTS.SITE_SELECTORS[site]).toBeDefined();
       expect(POCKET_PROMPT_CONSTANTS.SITE_SELECTORS[site].textarea).toBeTruthy();
       expect(POCKET_PROMPT_CONSTANTS.SITE_SELECTORS[site].conversation).toBeTruthy();
@@ -390,8 +399,12 @@ describe('Constants', () => {
       'PERMISSION_DENIED',
     ];
 
-    requiredErrorCodes.forEach(code => {
-      expect(POCKET_PROMPT_CONSTANTS.ERROR_CODES[code as keyof typeof POCKET_PROMPT_CONSTANTS.ERROR_CODES]).toBe(code);
+    requiredErrorCodes.forEach((code) => {
+      expect(
+        POCKET_PROMPT_CONSTANTS.ERROR_CODES[
+          code as keyof typeof POCKET_PROMPT_CONSTANTS.ERROR_CODES
+        ]
+      ).toBe(code);
     });
   });
 });
