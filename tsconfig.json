@@ -40,7 +40,9 @@
   },
   "include": [
     "src/**/*",
-    "vite.config.ts"
+    "test/**/*",
+    "vite.config.ts",
+    "vitest.config.ts"
   ],
   "exclude": [
     "node_modules",
