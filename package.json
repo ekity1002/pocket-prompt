@@ -4,9 +4,12 @@
   "description": "Chrome extension for seamless prompt management and sharing",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "build:watch": "vite build --watch",
-    "dev": "vite",
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode development",
+    "build:watch": "vite build --watch --mode development",
+    "dev": "npm run build:dev && npm run dev:watch",
+    "dev:watch": "vite build --watch --mode development",
+    "dev:server": "vite --mode development",
     "lint": "biome lint ./src",
     "lint:fix": "biome lint --apply ./src",
     "format": "biome format --write ./src",
@@ -27,12 +30,14 @@
     "@biomejs/biome": "^1.8.3",
     "@types/chrome": "^0.0.268",
     "@types/node": "^20.14.15",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
     "rimraf": "^5.0.10",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.5.4",
-    "vite": "^5.4.0",
-    "@vitejs/plugin-react": "^4.3.1"
+    "vite": "^5.4.0"
   },
-  "dependencies": {},
   "engines": {
     "node": ">=20.18.0"
   },
