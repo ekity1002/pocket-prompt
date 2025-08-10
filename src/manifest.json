@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Pocket Prompt",
+  "version": "1.0.0",
+  "description": "Chrome extension for seamless prompt management and sharing",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://*/*"],
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/index.html",
+    "default_title": "Pocket Prompt"
+  },
+  "icons": {
+    "16": "assets/icons/icon-16.png",
+    "32": "assets/icons/icon-32.png",
+    "48": "assets/icons/icon-48.png",
+    "128": "assets/icons/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["https://*/*"]
+    }
+  ]
+}
