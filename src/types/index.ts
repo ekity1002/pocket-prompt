@@ -144,16 +144,47 @@ export interface ApiError {
 
 // Storage interfaces
 export interface StorageData {
-  prompts: Record<string, Prompt>;
-  settings: UserSettings;
-  metadata: StorageMetadata;
+  prompts: Prompt[];
+  settings: Settings;
+  categories: string[];
+  tags: string[];
 }
 
-export interface UserSettings {
-  theme: 'light' | 'dark' | 'auto';
-  language: 'ja' | 'en';
-  features: FeatureFlags;
+// Legacy type mappings for backward compatibility
+export type UserSettings = Settings;
+
+export interface Settings {
+  theme: 'system' | 'light' | 'dark' | 'auto';
+  autoSave: boolean;
+  syncEnabled: boolean;
+  autoTag: boolean;
+  exportFormat: ExportFormat;
+  shortcuts: {
+    capture: string;
+    toggle: string;
+  };
 }
+
+export interface PromptFilter {
+  category?: string;
+  tags?: string[];
+  searchQuery?: string;
+  dateRange?: {
+    from: string;
+    to: string;
+  };
+}
+
+export interface PromptListOptions {
+  filter?: PromptFilter;
+  sortBy?: 'title' | 'createdAt' | 'updatedAt' | 'category';
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
+// UserSettings is now an alias for Settings - keeping this for legacy compatibility
+// The actual interface is defined above
 
 export interface FeatureFlags {
   tagManagement: boolean;
@@ -181,15 +212,15 @@ export const POCKET_PROMPT_CONSTANTS = {
   MAX_PROMPT_CONTENT_LENGTH: 10000,
   MAX_TAG_COUNT: 50,
   MAX_TAG_LENGTH: 50,
-  
+
   // Version info
   STORAGE_VERSION: '1.0.0',
   API_VERSION: '1.0.0',
   MANIFEST_VERSION: 3,
-  
+
   // Chrome extension
-  EXTENSION_ID: chrome?.runtime?.id || 'pocket-prompt-dev',
-  
+  EXTENSION_ID: (typeof chrome !== 'undefined' && chrome?.runtime?.id) || 'pocket-prompt-dev',
+
   // AI Site configurations
   SUPPORTED_AI_SITES: ['chatgpt', 'claude', 'gemini'] as const,
   SITE_SELECTORS: {
@@ -209,21 +240,21 @@ export const POCKET_PROMPT_CONSTANTS = {
       url: 'https://gemini.google.com',
     },
   },
-  
+
   // Export settings
   EXPORT_FORMATS: ['markdown', 'json', 'txt', 'csv'] as const,
   DEFAULT_EXPORT_FORMAT: 'markdown' as ExportFormat,
-  
+
   // UI settings
   THEMES: ['light', 'dark', 'auto'] as const,
   LANGUAGES: ['ja', 'en'] as const,
   DEFAULT_LANGUAGE: 'ja' as 'ja' | 'en',
-  
+
   // Performance limits
   DEBOUNCE_DELAY: 300,
   TOAST_DURATION: 5000,
   MODAL_TRANSITION_DURATION: 200,
-  
+
   // Error codes
   ERROR_CODES: {
     STORAGE_QUOTA_EXCEEDED: 'STORAGE_QUOTA_EXCEEDED',
@@ -236,10 +267,10 @@ export const POCKET_PROMPT_CONSTANTS = {
 } as const;
 
 // Type-safe constants
-export type SupportedAISiteConstant = typeof POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES[number];
-export type ExportFormatConstant = typeof POCKET_PROMPT_CONSTANTS.EXPORT_FORMATS[number];
-export type ThemeConstant = typeof POCKET_PROMPT_CONSTANTS.THEMES[number];
-export type LanguageConstant = typeof POCKET_PROMPT_CONSTANTS.LANGUAGES[number];
+export type SupportedAISiteConstant = (typeof POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES)[number];
+export type ExportFormatConstant = (typeof POCKET_PROMPT_CONSTANTS.EXPORT_FORMATS)[number];
+export type ThemeConstant = (typeof POCKET_PROMPT_CONSTANTS.THEMES)[number];
+export type LanguageConstant = (typeof POCKET_PROMPT_CONSTANTS.LANGUAGES)[number];
 export type ErrorCodeConstant = keyof typeof POCKET_PROMPT_CONSTANTS.ERROR_CODES;
 
 // ========================================
@@ -251,16 +282,18 @@ export type ErrorCodeConstant = keyof typeof POCKET_PROMPT_CONSTANTS.ERROR_CODES
  */
 export function isPrompt(obj: unknown): obj is Prompt {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const p = obj as Record<string, unknown>;
-  
+
   return (
     typeof p['id'] === 'string' &&
     typeof p['title'] === 'string' &&
     typeof p['content'] === 'string' &&
     Array.isArray(p['tags']) &&
     p['tags'].every((tag: unknown) => typeof tag === 'string') &&
-    (p['categoryId'] === undefined || p['categoryId'] === null || typeof p['categoryId'] === 'string') &&
+    (p['categoryId'] === undefined ||
+      p['categoryId'] === null ||
+      typeof p['categoryId'] === 'string') &&
     typeof p['createdAt'] === 'string' &&
     typeof p['updatedAt'] === 'string' &&
     isPromptMetadata(p['metadata'])
@@ -272,14 +305,18 @@ export function isPrompt(obj: unknown): obj is Prompt {
  */
 export function isPromptMetadata(obj: unknown): obj is PromptMetadata {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const m = obj as Record<string, unknown>;
-  
+
   return (
     typeof m['usageCount'] === 'number' &&
-    (m['lastUsedAt'] === undefined || m['lastUsedAt'] === null || typeof m['lastUsedAt'] === 'string') &&
+    (m['lastUsedAt'] === undefined ||
+      m['lastUsedAt'] === null ||
+      typeof m['lastUsedAt'] === 'string') &&
     typeof m['isFavorite'] === 'boolean' &&
-    (m['sourceUrl'] === undefined || m['sourceUrl'] === null || typeof m['sourceUrl'] === 'string') &&
+    (m['sourceUrl'] === undefined ||
+      m['sourceUrl'] === null ||
+      typeof m['sourceUrl'] === 'string') &&
     (m['aiModel'] === undefined || m['aiModel'] === null || typeof m['aiModel'] === 'string') &&
     (m['description'] === undefined || typeof m['description'] === 'string') &&
     (m['author'] === undefined || typeof m['author'] === 'string') &&
@@ -292,16 +329,20 @@ export function isPromptMetadata(obj: unknown): obj is PromptMetadata {
  * Type guard for SupportedAISite
  */
 export function isSupportedAISite(site: unknown): site is SupportedAISite {
-  return typeof site === 'string' && 
-    (POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES as readonly string[]).includes(site);
+  return (
+    typeof site === 'string' &&
+    (POCKET_PROMPT_CONSTANTS.SUPPORTED_AI_SITES as readonly string[]).includes(site)
+  );
 }
 
 /**
  * Type guard for ExportFormat
  */
 export function isExportFormat(format: unknown): format is ExportFormat {
-  return typeof format === 'string' && 
-    (POCKET_PROMPT_CONSTANTS.EXPORT_FORMATS as readonly string[]).includes(format);
+  return (
+    typeof format === 'string' &&
+    (POCKET_PROMPT_CONSTANTS.EXPORT_FORMATS as readonly string[]).includes(format)
+  );
 }
 
 /**
@@ -309,9 +350,9 @@ export function isExportFormat(format: unknown): format is ExportFormat {
  */
 export function isUserSettings(obj: unknown): obj is UserSettings {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const s = obj as Record<string, unknown>;
-  
+
   return (
     (POCKET_PROMPT_CONSTANTS.THEMES as readonly string[]).includes(s['theme'] as string) &&
     (POCKET_PROMPT_CONSTANTS.LANGUAGES as readonly string[]).includes(s['language'] as string) &&
@@ -324,9 +365,9 @@ export function isUserSettings(obj: unknown): obj is UserSettings {
  */
 export function isFeatureFlags(obj: unknown): obj is FeatureFlags {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const f = obj as Record<string, unknown>;
-  
+
   return (
     typeof f['tagManagement'] === 'boolean' &&
     typeof f['searchFiltering'] === 'boolean' &&
@@ -341,12 +382,21 @@ export function isFeatureFlags(obj: unknown): obj is FeatureFlags {
  */
 export function isChromeMessage(obj: unknown): obj is ChromeMessage {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const m = obj as Record<string, unknown>;
-  
+
   return (
     typeof m['type'] === 'string' &&
-    ['GET_PROMPTS', 'SAVE_PROMPT', 'COPY_PROMPT', 'EXPORT_CONVERSATION', 'INSERT_TEXT', 'GET_PAGE_INFO', 'SYNC_DATA', 'ERROR_REPORT'].includes(m['type'] as string) &&
+    [
+      'GET_PROMPTS',
+      'SAVE_PROMPT',
+      'COPY_PROMPT',
+      'EXPORT_CONVERSATION',
+      'INSERT_TEXT',
+      'GET_PAGE_INFO',
+      'SYNC_DATA',
+      'ERROR_REPORT',
+    ].includes(m['type'] as string) &&
     (m['tabId'] === undefined || typeof m['tabId'] === 'number') &&
     m['timestamp'] instanceof Date &&
     typeof m['requestId'] === 'string'
@@ -358,9 +408,9 @@ export function isChromeMessage(obj: unknown): obj is ChromeMessage {
  */
 export function isConversationExport(obj: unknown): obj is ConversationExport {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const e = obj as Record<string, unknown>;
-  
+
   return (
     typeof e['id'] === 'string' &&
     isSupportedAISite(e['site']) &&
@@ -379,9 +429,9 @@ export function isConversationExport(obj: unknown): obj is ConversationExport {
  */
 export function isConversationData(obj: unknown): obj is ConversationData {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const d = obj as Record<string, unknown>;
-  
+
   return (
     typeof d['title'] === 'string' &&
     Array.isArray(d['messages']) &&
@@ -394,9 +444,9 @@ export function isConversationData(obj: unknown): obj is ConversationData {
  */
 export function isConversationMessage(obj: unknown): obj is ConversationMessage {
   if (typeof obj !== 'object' || obj === null) return false;
-  
+
   const m = obj as Record<string, unknown>;
-  
+
   return (
     (m['role'] === 'user' || m['role'] === 'assistant') &&
     typeof m['content'] === 'string' &&
@@ -413,15 +463,17 @@ export function isConversationMessage(obj: unknown): obj is ConversationMessage 
  */
 export function validatePromptContent(content: string): string[] {
   const errors: string[] = [];
-  
+
   if (!content.trim()) {
     errors.push('Prompt content cannot be empty');
   }
-  
+
   if (content.length > POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH) {
-    errors.push(`Prompt content cannot exceed ${POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH} characters`);
+    errors.push(
+      `Prompt content cannot exceed ${POCKET_PROMPT_CONSTANTS.MAX_PROMPT_CONTENT_LENGTH} characters`
+    );
   }
-  
+
   return errors;
 }
 
@@ -430,15 +482,15 @@ export function validatePromptContent(content: string): string[] {
  */
 export function validatePromptTitle(title: string): string[] {
   const errors: string[] = [];
-  
+
   if (!title.trim()) {
     errors.push('Prompt title cannot be empty');
   }
-  
+
   if (title.length > 200) {
     errors.push('Prompt title cannot exceed 200 characters');
   }
-  
+
   return errors;
 }
 
@@ -447,31 +499,31 @@ export function validatePromptTitle(title: string): string[] {
  */
 export function validateTags(tags: string[]): string[] {
   const errors: string[] = [];
-  
+
   if (tags.length > POCKET_PROMPT_CONSTANTS.MAX_TAG_COUNT) {
     errors.push(`Cannot have more than ${POCKET_PROMPT_CONSTANTS.MAX_TAG_COUNT} tags`);
   }
-  
+
   for (const tag of tags) {
     if (!tag.trim()) {
       errors.push('Tags cannot be empty');
     }
-    
+
     if (tag.length > POCKET_PROMPT_CONSTANTS.MAX_TAG_LENGTH) {
       errors.push(`Tag "${tag}" exceeds ${POCKET_PROMPT_CONSTANTS.MAX_TAG_LENGTH} characters`);
     }
-    
+
     if (!/^[a-zA-Z0-9\s\-_]+$/.test(tag)) {
       errors.push(`Tag "${tag}" contains invalid characters`);
     }
   }
-  
+
   // Check for duplicates
-  const uniqueTags = new Set(tags.map(tag => tag.toLowerCase().trim()));
+  const uniqueTags = new Set(tags.map((tag) => tag.toLowerCase().trim()));
   if (uniqueTags.size !== tags.length) {
     errors.push('Duplicate tags are not allowed');
   }
-  
+
   return errors;
 }
 
@@ -480,29 +532,29 @@ export function validateTags(tags: string[]): string[] {
  */
 export function validateCreatePromptRequest(request: unknown): request is CreatePromptRequest {
   if (typeof request !== 'object' || request === null) return false;
-  
+
   const r = request as Record<string, unknown>;
-  
+
   const titleErrors = validatePromptTitle(r['title'] as string);
   const contentErrors = validatePromptContent(r['content'] as string);
   const tagErrors = validateTags((r['tags'] as string[]) || []);
-  
+
   return titleErrors.length === 0 && contentErrors.length === 0 && tagErrors.length === 0;
 }
 
 /**
  * Creates default UserSettings
  */
-export function createDefaultUserSettings(): UserSettings {
+export function createDefaultUserSettings(): Settings {
   return {
     theme: 'auto',
-    language: POCKET_PROMPT_CONSTANTS.DEFAULT_LANGUAGE,
-    features: {
-      tagManagement: true,
-      searchFiltering: true,
-      aiSiteIntegration: true,
-      cloudSync: false, // Disabled by default
-      multiAiSupport: true,
+    autoSave: true,
+    syncEnabled: true,
+    autoTag: true,
+    exportFormat: POCKET_PROMPT_CONSTANTS.DEFAULT_EXPORT_FORMAT,
+    shortcuts: {
+      capture: 'Alt+Shift+C',
+      toggle: 'Alt+Shift+P',
     },
   };
 }

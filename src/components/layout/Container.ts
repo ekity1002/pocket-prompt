@@ -14,18 +14,18 @@ export interface ContainerProps {
 export function createContainer(props: ContainerProps): HTMLElement {
   const container = document.createElement('div');
   container.className = getContainerClasses(props);
-  
+
   // Add children
-  props.children.forEach(child => {
+  props.children.forEach((child) => {
     container.appendChild(child);
   });
-  
+
   return container;
 }
 
 function getContainerClasses(props: ContainerProps): string {
   const baseClasses = 'mx-auto';
-  
+
   // Max width classes
   const maxWidthClasses = {
     sm: 'max-w-sm',
@@ -35,7 +35,7 @@ function getContainerClasses(props: ContainerProps): string {
     '2xl': 'max-w-2xl',
     full: 'max-w-full',
   };
-  
+
   // Padding classes
   const paddingClasses = {
     none: '',
@@ -43,32 +43,28 @@ function getContainerClasses(props: ContainerProps): string {
     md: 'p-4',
     lg: 'p-6',
   };
-  
+
   const maxWidth = props.maxWidth || 'full';
   const padding = props.padding || 'md';
-  
-  const classes = [
-    baseClasses,
-    maxWidthClasses[maxWidth],
-    paddingClasses[padding],
-  ];
-  
+
+  const classes = [baseClasses, maxWidthClasses[maxWidth], paddingClasses[padding]];
+
   // Optional styling
   if (props.background) {
     classes.push('bg-white');
   }
-  
+
   if (props.border) {
     classes.push('border border-gray-200 rounded-lg');
   }
-  
+
   if (props.shadow) {
     classes.push('shadow-sm');
   }
-  
+
   if (props.className) {
     classes.push(props.className);
   }
-  
+
   return classes.join(' ');
 }

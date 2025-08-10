@@ -7,7 +7,7 @@ export * from './base/Input';
 export * from './base/Modal';
 export * from './base/Toast';
 
-// Prompt components  
+// Prompt components
 export * from './prompt/PromptCard';
 export * from './prompt/PromptForm';
 export * from './prompt/PromptList';

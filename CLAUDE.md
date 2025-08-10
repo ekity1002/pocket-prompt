@@ -2,6 +2,8 @@
 リリースブランチ: main
 開発ブランチ: develop
 gitフローで開発を行う.
+各種修正のプルリクはdevelopブランチに行う
+コミットする前にbiome format をかけること。
 
 ■技術スタック
 - Node.js バージョン管理: Volta (Node.js 20.19.4)

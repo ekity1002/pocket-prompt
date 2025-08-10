@@ -16,15 +16,15 @@ export interface ExportButtonProps {
 export function createExportButton(props: ExportButtonProps): HTMLElement {
   const container = document.createElement('div');
   container.className = 'relative inline-block';
-  
+
   const button = document.createElement('button');
   button.className = getButtonClasses(props);
   button.disabled = props.disabled || props.loading || false;
-  
+
   // Button content
   const content = document.createElement('div');
   content.className = 'flex items-center';
-  
+
   // Loading spinner or icon
   if (props.loading) {
     const spinner = document.createElement('div');
@@ -46,12 +46,12 @@ export function createExportButton(props: ExportButtonProps): HTMLElement {
     `;
     content.appendChild(icon);
   }
-  
+
   // Button text
   const text = document.createElement('span');
   text.textContent = props.loading ? 'Exporting...' : 'Export';
   content.appendChild(text);
-  
+
   // Dropdown arrow
   if (props.showFormats !== false) {
     const arrow = document.createElement('div');
@@ -63,25 +63,25 @@ export function createExportButton(props: ExportButtonProps): HTMLElement {
     `;
     content.appendChild(arrow);
   }
-  
+
   button.appendChild(content);
   container.appendChild(button);
-  
+
   // Dropdown menu for formats
   if (props.showFormats !== false) {
     let isOpen = false;
     const dropdown = createFormatDropdown(props.onExport);
     dropdown.style.display = 'none';
     container.appendChild(dropdown);
-    
+
     // Toggle dropdown
     button.addEventListener('click', () => {
       if (props.disabled || props.loading) return;
-      
+
       isOpen = !isOpen;
       dropdown.style.display = isOpen ? 'block' : 'none';
     });
-    
+
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
       if (!container.contains(e.target as Node)) {
@@ -97,14 +97,15 @@ export function createExportButton(props: ExportButtonProps): HTMLElement {
       }
     });
   }
-  
+
   return container;
 }
 
 function createFormatDropdown(onExport: (format: ExportFormat) => void): HTMLElement {
   const dropdown = document.createElement('div');
-  dropdown.className = 'absolute right-0 z-10 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg';
-  
+  dropdown.className =
+    'absolute right-0 z-10 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg';
+
   const formats: { format: ExportFormat; label: string; description: string }[] = [
     {
       format: 'markdown',
@@ -127,64 +128,59 @@ function createFormatDropdown(onExport: (format: ExportFormat) => void): HTMLEle
       description: 'Spreadsheet compatible',
     },
   ];
-  
+
   formats.forEach((item, index) => {
     const option = document.createElement('button');
     option.className = `w-full px-4 py-3 text-left hover:bg-gray-50 focus:outline-none focus:bg-gray-50 ${
       index === 0 ? 'rounded-t-lg' : ''
-    } ${
-      index === formats.length - 1 ? 'rounded-b-lg' : ''
-    }`;
-    
+    } ${index === formats.length - 1 ? 'rounded-b-lg' : ''}`;
+
     const content = document.createElement('div');
-    
+
     const label = document.createElement('div');
     label.className = 'font-medium text-gray-900';
     label.textContent = item.label;
     content.appendChild(label);
-    
+
     const description = document.createElement('div');
     description.className = 'text-sm text-gray-500';
     description.textContent = item.description;
     content.appendChild(description);
-    
+
     option.appendChild(content);
-    
+
     option.addEventListener('click', (e) => {
       e.stopPropagation();
       onExport(item.format);
       dropdown.style.display = 'none';
     });
-    
+
     dropdown.appendChild(option);
   });
-  
+
   return dropdown;
 }
 
 function getButtonClasses(props: ExportButtonProps): string {
-  const baseClasses = 'inline-flex items-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200';
-  
+  const baseClasses =
+    'inline-flex items-center font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors duration-200';
+
   // Size classes
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2 text-sm',
     lg: 'px-6 py-3 text-base',
   };
-  
+
   const size = props.size || 'md';
-  
+
   // State classes
-  const stateClasses = props.disabled || props.loading
-    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-    : 'bg-primary-600 text-white hover:bg-primary-700';
-  
-  const classes = [
-    baseClasses,
-    sizeClasses[size],
-    stateClasses,
-    props.className || '',
-  ];
-  
+  const stateClasses =
+    props.disabled || props.loading
+      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+      : 'bg-primary-600 text-white hover:bg-primary-700';
+
+  const classes = [baseClasses, sizeClasses[size], stateClasses, props.className || ''];
+
   return classes.join(' ');
 }

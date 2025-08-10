@@ -1,12 +1,12 @@
 // Core business logic for export functionality
 // Handles conversation export from various AI sites
 
-import type { 
-  ConversationExport, 
+import type {
+  ConversationExport,
   ConversationData,
-  ExportFormat, 
+  ExportFormat,
   ExportOptions,
-  SupportedAISite 
+  SupportedAISite,
 } from '@/types';
 
 /**
@@ -32,7 +32,7 @@ export class ExportManager {
 
     // Get site-specific extractor
     const extractor = this.getSiteExtractor(site);
-    
+
     // Extract conversation data
     const conversationData = await extractor.extractConversation();
 
@@ -105,7 +105,7 @@ export class ExportManager {
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      
+
       try {
         document.execCommand('copy');
       } finally {
@@ -194,7 +194,7 @@ export class ExportManager {
   private convertToCsv(exportData: ConversationExport): string {
     const { data } = exportData;
     let csv = 'Index,Role,Content,Timestamp\n';
-    
+
     data.messages.forEach((message, index) => {
       const content = message.content.replace(/"/g, '""'); // Escape quotes
       csv += `${index + 1},"${message.role}","${content}","${message.timestamp || ''}"\n`;
@@ -218,8 +218,16 @@ class ChatGPTExtractor {
     return {
       title: 'ChatGPT Conversation',
       messages: [
-        { role: 'user' as const, content: 'Sample user message', timestamp: new Date().toISOString() },
-        { role: 'assistant' as const, content: 'Sample assistant response', timestamp: new Date().toISOString() },
+        {
+          role: 'user' as const,
+          content: 'Sample user message',
+          timestamp: new Date().toISOString(),
+        },
+        {
+          role: 'assistant' as const,
+          content: 'Sample assistant response',
+          timestamp: new Date().toISOString(),
+        },
       ],
     };
   }
@@ -231,8 +239,16 @@ class ClaudeExtractor {
     return {
       title: 'Claude Conversation',
       messages: [
-        { role: 'user' as const, content: 'Sample user message', timestamp: new Date().toISOString() },
-        { role: 'assistant' as const, content: 'Sample assistant response', timestamp: new Date().toISOString() },
+        {
+          role: 'user' as const,
+          content: 'Sample user message',
+          timestamp: new Date().toISOString(),
+        },
+        {
+          role: 'assistant' as const,
+          content: 'Sample assistant response',
+          timestamp: new Date().toISOString(),
+        },
       ],
     };
   }
@@ -244,8 +260,16 @@ class GeminiExtractor {
     return {
       title: 'Gemini Conversation',
       messages: [
-        { role: 'user' as const, content: 'Sample user message', timestamp: new Date().toISOString() },
-        { role: 'assistant' as const, content: 'Sample assistant response', timestamp: new Date().toISOString() },
+        {
+          role: 'user' as const,
+          content: 'Sample user message',
+          timestamp: new Date().toISOString(),
+        },
+        {
+          role: 'assistant' as const,
+          content: 'Sample assistant response',
+          timestamp: new Date().toISOString(),
+        },
       ],
     };
   }

@@ -7,7 +7,13 @@ export interface ToastProps {
   duration?: number;
   onClose?: () => void;
   closable?: boolean;
-  position?: 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left' | 'top-center' | 'bottom-center';
+  position?:
+    | 'top-right'
+    | 'top-left'
+    | 'bottom-right'
+    | 'bottom-left'
+    | 'top-center'
+    | 'bottom-center';
 }
 
 export interface ToastManager {
@@ -33,13 +39,13 @@ class ToastManagerImpl implements ToastManager {
     const container = this.getContainer();
     const toast = createToast(props);
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // Update container position
     this.updateContainerPosition(props.position || 'top-right');
-    
+
     container.appendChild(toast);
     this.toasts.set(id, toast);
-    
+
     // Auto-remove after duration
     const duration = props.duration !== undefined ? props.duration : 5000;
     if (duration > 0) {
@@ -47,18 +53,18 @@ class ToastManagerImpl implements ToastManager {
         this.removeToast(id);
       }, duration);
     }
-    
+
     // Add close handler
     const closeHandler = () => {
       this.removeToast(id);
       props.onClose?.();
     };
-    
+
     if (props.closable !== false) {
       const closeButton = toast.querySelector('[data-close]');
       closeButton?.addEventListener('click', closeHandler);
     }
-    
+
     // Auto-close on click if not closable
     if (props.closable === false) {
       toast.addEventListener('click', closeHandler);
@@ -77,7 +83,7 @@ class ToastManagerImpl implements ToastManager {
       // Animate out
       toast.style.opacity = '0';
       toast.style.transform = 'translateX(100%)';
-      
+
       setTimeout(() => {
         toast.parentNode?.removeChild(toast);
         this.toasts.delete(id);
@@ -87,10 +93,10 @@ class ToastManagerImpl implements ToastManager {
 
   private updateContainerPosition(position: string): void {
     if (!this.container) return;
-    
+
     // Reset classes
     this.container.className = 'fixed z-50 pointer-events-none';
-    
+
     switch (position) {
       case 'top-right':
         this.container.className += ' top-4 right-4';
@@ -120,27 +126,28 @@ export const toastManager: ToastManager = new ToastManagerImpl();
 export function createToast(props: ToastProps): HTMLElement {
   const toast = document.createElement('div');
   toast.className = getToastClasses(props);
-  
+
   // Create content
   const content = document.createElement('div');
   content.className = 'flex items-start';
-  
+
   // Add icon
   const icon = document.createElement('div');
   icon.className = 'flex-shrink-0 mr-3';
   icon.innerHTML = getToastIcon(props.type || 'info');
   content.appendChild(icon);
-  
+
   // Add message
   const message = document.createElement('div');
   message.className = 'flex-1 text-sm font-medium';
   message.textContent = props.message;
   content.appendChild(message);
-  
+
   // Add close button
   if (props.closable !== false) {
     const closeButton = document.createElement('button');
-    closeButton.className = 'ml-3 flex-shrink-0 text-gray-400 hover:text-gray-600 focus:outline-none';
+    closeButton.className =
+      'ml-3 flex-shrink-0 text-gray-400 hover:text-gray-600 focus:outline-none';
     closeButton.setAttribute('data-close', 'true');
     closeButton.innerHTML = `
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,24 +156,25 @@ export function createToast(props: ToastProps): HTMLElement {
     `;
     content.appendChild(closeButton);
   }
-  
+
   toast.appendChild(content);
-  
+
   return toast;
 }
 
 function getToastClasses(props: ToastProps): string {
-  const baseClasses = 'pointer-events-auto mb-3 max-w-sm w-full bg-white shadow-lg rounded-lg border transform transition-all duration-300 ease-in-out';
-  
+  const baseClasses =
+    'pointer-events-auto mb-3 max-w-sm w-full bg-white shadow-lg rounded-lg border transform transition-all duration-300 ease-in-out';
+
   const typeClasses = {
     success: 'border-green-200 text-green-800',
     error: 'border-red-200 text-red-800',
     warning: 'border-yellow-200 text-yellow-800',
     info: 'border-blue-200 text-blue-800',
   };
-  
+
   const type = props.type || 'info';
-  
+
   return `${baseClasses} ${typeClasses[type]} p-4`;
 }
 
@@ -193,6 +201,6 @@ function getToastIcon(type: string): string {
       </svg>
     `,
   };
-  
+
   return icons[type as keyof typeof icons] || icons.info;
 }
