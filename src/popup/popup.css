@@ -1,0 +1,50 @@
+@import '../styles/global.css';
+
+/* Popup specific styles */
+.popup-container {
+  @apply chrome-popup;
+}
+
+.popup-header {
+  @apply chrome-header;
+}
+
+.popup-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.popup-settings-btn {
+  @apply chrome-button-secondary text-2xs px-3 py-1;
+}
+
+.popup-prompt-list {
+  @apply space-y-2 mb-4;
+}
+
+.popup-prompt-item {
+  @apply chrome-card p-3 cursor-pointer hover:border-primary-300;
+}
+
+.popup-prompt-title {
+  @apply font-medium text-sm text-gray-900 mb-1;
+}
+
+.popup-prompt-preview {
+  @apply text-2xs text-gray-600 line-clamp-2;
+}
+
+.popup-add-button {
+  @apply chrome-button w-full;
+}
+
+.popup-empty-state {
+  @apply text-center py-8 text-gray-500;
+}
+
+.popup-empty-title {
+  @apply text-sm font-medium mb-1;
+}
+
+.popup-empty-subtitle {
+  @apply text-2xs;
+}
