@@ -164,6 +164,18 @@ export interface ClipboardDebugInfo {
   permissionsGranted: boolean;
 }
 
+// Error Management Types
+export type {
+  ErrorLevel,
+  ErrorContext,
+  ReproductionContext,
+  StructuredLogEntry,
+  UserErrorInfo,
+  ErrorAction,
+  ErrorStatistics,
+  ChromeExtensionError,
+} from './error-types';
+
 // Storage interfaces
 export interface StorageData {
   prompts: Prompt[];
