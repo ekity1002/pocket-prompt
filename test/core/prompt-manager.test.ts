@@ -4,8 +4,8 @@ import type {
   CreatePromptRequest, 
   UpdatePromptRequest,
   PromptSearchOptions 
-} from '@/types';
-import { PromptManager } from '../prompt-manager';
+} from '../../src/types';
+import { PromptManager } from '../../src/core/prompt-manager';
 
 // Mock StorageAdapter
 const mockStorageAdapter = {

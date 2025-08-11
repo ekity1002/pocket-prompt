@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import type { CreatePromptRequest, UpdatePromptRequest } from '@/types';
-import { PromptValidator } from '../prompt-validator';
+import type { CreatePromptRequest, UpdatePromptRequest } from '../../src/types';
+import { PromptValidator } from '../../src/core/prompt-validator';
 
 describe('PromptValidator', () => {
   describe('validateCreateRequest', () => {

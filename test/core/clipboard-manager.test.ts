@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import type { PromptManager } from '../prompt-manager';
-import { ClipboardManager } from '../clipboard-manager';
+import type { PromptManager } from '../../src/core/prompt-manager';
+import { ClipboardManager } from '../../src/core/clipboard-manager';
 
 // Mock Chrome APIs
 const mockChrome = {
