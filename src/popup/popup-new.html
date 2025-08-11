@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pocket Prompt</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div id="popup-root" class="popup-container" role="application">
+        <!-- Header -->
+        <header class="popup-header" role="banner">
+            <h1 class="app-title">
+                <span class="app-icon" aria-hidden="true">📝</span>
+                Pocket Prompt
+            </h1>
+            <button 
+                class="settings-button" 
+                type="button"
+                aria-label="設定メニューを開く"
+                title="設定"
+            >
+                <span class="icon-settings" aria-hidden="true">⚙️</span>
+            </button>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="popup-main" role="main">
+            <!-- Loading State -->
+            <div 
+                id="loading-state" 
+                class="state-display loading-state" 
+                hidden 
+                role="status" 
+                aria-live="polite"
+            >
+                <div class="spinner" aria-hidden="true"></div>
+                <p class="loading-text">プロンプトを読み込み中...</p>
+            </div>
+            
+            <!-- Error State -->
+            <div 
+                id="error-state" 
+                class="state-display error-state" 
+                hidden 
+                role="alert" 
+                aria-live="assertive"
+            >
+                <div class="error-icon" aria-hidden="true">⚠️</div>
+                <h3 class="error-title" id="error-title">エラーが発生しました</h3>
+                <p class="error-message" id="error-message"></p>
+                <div class="error-actions" id="error-actions">
+                    <!-- Error action buttons will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Empty State -->
+            <div 
+                id="empty-state" 
+                class="state-display empty-state" 
+                hidden
+                role="region"
+                aria-labelledby="empty-title"
+            >
+                <div class="empty-icon" aria-hidden="true">📝</div>
+                <h3 class="empty-title" id="empty-title">プロンプトがありません</h3>
+                <p class="empty-description">新しいプロンプトを作成してみましょう</p>
+                <button 
+                    class="create-prompt-button primary-button" 
+                    type="button"
+                    onclick="createPrompt()"
+                >
+                    <span class="button-icon" aria-hidden="true">➕</span>
+                    プロンプトを作成
+                </button>
+            </div>
+            
+            <!-- Success State -->
+            <div 
+                id="success-state" 
+                class="state-display success-state" 
+                hidden 
+                role="status"
+                aria-live="polite"
+            >
+                <div class="success-icon" aria-hidden="true">✅</div>
+                <p class="success-message" id="success-message"></p>
+            </div>
+            
+            <!-- Content Container -->
+            <div id="content-container" class="content-container">
+                <!-- Search/Filter Section -->
+                <section class="search-section" role="search">
+                    <div class="search-container">
+                        <label for="search-input" class="search-label visually-hidden">
+                            プロンプトを検索
+                        </label>
+                        <input 
+                            type="search" 
+                            id="search-input" 
+                            class="search-input"
+                            placeholder="プロンプトを検索..."
+                            aria-describedby="search-help"
+                        >
+                        <button 
+                            class="search-clear" 
+                            type="button" 
+                            aria-label="検索をクリア"
+                            hidden
+                        >
+                            <span aria-hidden="true">✕</span>
+                        </button>
+                    </div>
+                    <p id="search-help" class="search-help visually-hidden">
+                        タイトルやタグでプロンプトを検索できます
+                    </p>
+                </section>
+                
+                <!-- Prompt List Section -->
+                <section class="prompt-list-section" role="region" aria-labelledby="prompt-list-title">
+                    <h2 id="prompt-list-title" class="section-title visually-hidden">プロンプト一覧</h2>
+                    <div 
+                        id="prompt-list" 
+                        class="prompt-list"
+                        role="list"
+                        aria-describedby="prompt-count"
+                    >
+                        <!-- Prompt items will be inserted here dynamically -->
+                    </div>
+                    <p id="prompt-count" class="prompt-count" aria-live="polite">
+                        <!-- Prompt count will be updated here -->
+                    </p>
+                </section>
+            </div>
+        </main>
+        
+        <!-- Footer -->
+        <footer class="popup-footer" role="contentinfo">
+            <button 
+                class="primary-action-button primary-button" 
+                type="button"
+                onclick="createPrompt()"
+            >
+                <span class="button-icon" aria-hidden="true">➕</span>
+                新しいプロンプト
+            </button>
+            <button 
+                class="secondary-action-button secondary-button" 
+                type="button"
+                onclick="openSettings()"
+                title="設定とオプション"
+            >
+                <span class="button-icon" aria-hidden="true">⚙️</span>
+                <span class="visually-hidden">設定</span>
+            </button>
+        </footer>
+    </div>
+    
+    <!-- Keyboard shortcuts help (initially hidden) -->
+    <div id="keyboard-help" class="keyboard-help" hidden>
+        <div class="help-overlay" onclick="hideKeyboardHelp()"></div>
+        <div class="help-content" role="dialog" aria-labelledby="help-title" aria-modal="true">
+            <h3 id="help-title">キーボードショートカット</h3>
+            <dl class="shortcuts-list">
+                <dt><kbd>Ctrl</kbd> + <kbd>N</kbd></dt>
+                <dd>新しいプロンプト作成</dd>
+                <dt><kbd>Ctrl</kbd> + <kbd>F</kbd></dt>
+                <dd>検索</dd>
+                <dt><kbd>Esc</kbd></dt>
+                <dd>モーダル・検索クリア</dd>
+                <dt><kbd>?</kbd></dt>
+                <dd>このヘルプ表示</dd>
+            </dl>
+            <button class="help-close" onclick="hideKeyboardHelp()" aria-label="ヘルプを閉じる">
+                <span aria-hidden="true">✕</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="popup.js" type="module"></script>
+</body>
+</html>
