@@ -1,0 +1,241 @@
+<!-- Prompt Editor Modal Template -->
+<!-- TASK-0013: プロンプト作成・編集機能HTML -->
+
+<!-- Modal Overlay -->
+<div id="prompt-editor-overlay" class="editor-overlay" hidden>
+  <!-- Modal Container -->
+  <div id="prompt-editor-modal" class="editor-modal" role="dialog" aria-labelledby="editor-modal-title" aria-modal="true">
+    <!-- Modal Header -->
+    <header class="editor-header">
+      <h2 id="editor-modal-title" class="editor-title">
+        <span class="editor-icon" aria-hidden="true">📝</span>
+        <span class="editor-title-text">新しいプロンプト作成</span>
+      </h2>
+      <button 
+        class="editor-close" 
+        type="button" 
+        aria-label="閉じる"
+        title="閉じる (Esc)"
+      >
+        <span aria-hidden="true">✕</span>
+      </button>
+    </header>
+
+    <!-- Modal Content -->
+    <div class="editor-content">
+      <!-- Error Display -->
+      <div id="prompt-editor-errors" class="editor-errors" role="alert" aria-live="polite" hidden>
+        <div class="error-icon" aria-hidden="true">⚠️</div>
+        <div class="error-message"></div>
+      </div>
+
+      <!-- Form -->
+      <form id="prompt-editor-form" class="editor-form" novalidate>
+        <!-- Title Field -->
+        <div class="field-container">
+          <label for="prompt-title-field" class="field-label">
+            タイトル
+            <span class="field-required" aria-label="必須">*</span>
+          </label>
+          <div class="field-input-container">
+            <input
+              type="text"
+              id="prompt-title-field"
+              class="field-input"
+              placeholder="プロンプトのタイトルを入力してください"
+              maxlength="100"
+              required
+              aria-required="true"
+              aria-describedby="title-help title-counter"
+            />
+            <div id="title-counter" class="character-counter">0/100</div>
+          </div>
+          <div class="field-help" id="title-help">
+            プロンプトの目的が分かりやすいタイトルを付けてください
+          </div>
+          <div class="field-error" aria-hidden="true"></div>
+        </div>
+
+        <!-- Content Field -->
+        <div class="field-container">
+          <label for="prompt-content-field" class="field-label">
+            本文
+            <span class="field-required" aria-label="必須">*</span>
+          </label>
+          <div class="field-input-container">
+            <textarea
+              id="prompt-content-field"
+              class="field-textarea"
+              placeholder="プロンプトの内容を入力してください&#10;&#10;例:&#10;あなたは優秀なプログラマーです。&#10;以下の要件に基づいてコードを書いてください。"
+              maxlength="10000"
+              rows="6"
+              required
+              aria-required="true"
+              aria-describedby="content-help content-counter"
+            ></textarea>
+            <div id="content-counter" class="character-counter">0/10,000</div>
+          </div>
+          <div class="field-help" id="content-help">
+            AIに送信するプロンプトの内容を入力してください。改行や特殊文字も利用できます
+          </div>
+          <div class="field-error" aria-hidden="true"></div>
+        </div>
+
+        <!-- Tags Field -->
+        <div class="field-container">
+          <label for="prompt-tags-field" class="field-label">
+            タグ
+            <span class="field-optional">(任意)</span>
+          </label>
+          <div class="field-input-container">
+            <input
+              type="text"
+              id="prompt-tags-field"
+              class="field-input"
+              placeholder="タグをスペースまたはカンマ区切りで入力 (例: 開発 コーディング Python)"
+              aria-describedby="tags-help"
+            />
+          </div>
+          <div class="field-help" id="tags-help">
+            プロンプトを分類するためのタグを設定できます（最大10個、各20文字以内）
+          </div>
+          <div class="field-error" aria-hidden="true"></div>
+        </div>
+      </form>
+
+      <!-- Auto-save Status -->
+      <div class="autosave-status" id="autosave-status" aria-live="polite">
+        <span class="autosave-icon" aria-hidden="true">💾</span>
+        <span class="autosave-text">下書きを自動保存しています...</span>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <footer class="editor-footer">
+      <div class="editor-actions">
+        <button 
+          type="button" 
+          id="prompt-cancel-btn" 
+          class="editor-button secondary-button"
+        >
+          <span class="button-icon" aria-hidden="true">✕</span>
+          キャンセル
+        </button>
+        <button 
+          type="submit" 
+          id="prompt-save-btn" 
+          class="editor-button primary-button"
+          disabled
+        >
+          <span class="button-icon" aria-hidden="true">💾</span>
+          <span class="button-text">保存</span>
+          <span class="button-spinner" aria-hidden="true" hidden>⟳</span>
+        </button>
+      </div>
+      
+      <!-- Keyboard Shortcuts Help -->
+      <div class="editor-shortcuts">
+        <details class="shortcuts-details">
+          <summary class="shortcuts-summary">
+            <span class="shortcuts-icon" aria-hidden="true">⌨️</span>
+            キーボードショートカット
+          </summary>
+          <dl class="shortcuts-list">
+            <div class="shortcuts-item">
+              <dt><kbd>Ctrl</kbd> + <kbd>S</kbd></dt>
+              <dd>保存</dd>
+            </div>
+            <div class="shortcuts-item">
+              <dt><kbd>Ctrl</kbd> + <kbd>Enter</kbd></dt>
+              <dd>保存して閉じる</dd>
+            </div>
+            <div class="shortcuts-item">
+              <dt><kbd>Esc</kbd></dt>
+              <dd>キャンセル・閉じる</dd>
+            </div>
+            <div class="shortcuts-item">
+              <dt><kbd>Tab</kbd></dt>
+              <dd>次のフィールドへ移動</dd>
+            </div>
+          </dl>
+        </details>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- Templates for Dynamic Content -->
+<template id="editor-mode-create-template">
+  <span class="editor-icon" aria-hidden="true">📝</span>
+  <span class="editor-title-text">新しいプロンプト作成</span>
+</template>
+
+<template id="editor-mode-edit-template">
+  <span class="editor-icon" aria-hidden="true">✏️</span>
+  <span class="editor-title-text">プロンプトを編集</span>
+</template>
+
+<!-- Validation Error Messages Template -->
+<template id="validation-error-template">
+  <div class="validation-error">
+    <span class="error-icon" aria-hidden="true">❌</span>
+    <span class="error-text"></span>
+  </div>
+</template>
+
+<!-- Auto-save Notification Template -->
+<template id="autosave-notification-template">
+  <div class="autosave-notification">
+    <span class="autosave-icon" aria-hidden="true">✅</span>
+    <span class="autosave-message">下書きを保存しました</span>
+  </div>
+</template>
+
+<!-- Tag Item Template -->
+<template id="tag-item-template">
+  <span class="tag-item">
+    <span class="tag-text"></span>
+    <button class="tag-remove" type="button" aria-label="タグを削除">
+      <span aria-hidden="true">✕</span>
+    </button>
+  </span>
+</template>
+
+<!-- Field Character Counter Template -->
+<template id="character-counter-template">
+  <div class="character-counter">
+    <span class="counter-current">0</span>
+    <span class="counter-separator">/</span>
+    <span class="counter-max">0</span>
+  </div>
+</template>
+
+<!-- Loading Spinner Template -->
+<template id="loading-spinner-template">
+  <div class="loading-spinner">
+    <div class="spinner-circle"></div>
+    <span class="spinner-text">処理中...</span>
+  </div>
+</template>
+
+<!-- Success Message Template -->
+<template id="success-message-template">
+  <div class="success-message">
+    <span class="success-icon" aria-hidden="true">✅</span>
+    <span class="success-text"></span>
+  </div>
+</template>
+
+<!-- Confirmation Dialog Template -->
+<template id="confirmation-dialog-template">
+  <div class="confirmation-dialog" role="dialog" aria-modal="true">
+    <div class="confirmation-content">
+      <div class="confirmation-icon" aria-hidden="true">⚠️</div>
+      <div class="confirmation-message"></div>
+      <div class="confirmation-actions">
+        <button class="confirmation-cancel secondary-button">キャンセル</button>
+        <button class="confirmation-confirm primary-button">確認</button>
+      </div>
+    </div>
+  </div>
+</template>
