@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**
  * Message Router Test Suite
- * 
+ *
  * Tests the core message routing functionality including:
  * - Basic message routing between components
  * - Message type validation and routing
@@ -84,10 +84,10 @@ describe('MessageRouter', () => {
     it('should register a route handler successfully', () => {
       // Arrange
       const messageType = 'PROMPT_CREATE';
-      
+
       // Act
       messageRouter.registerRoute(messageType, mockHandler);
-      
+
       // Assert
       expect(messageRouter.isRouteRegistered(messageType)).toBe(true);
     });
@@ -96,10 +96,10 @@ describe('MessageRouter', () => {
       // Arrange
       const messageType = 'PROMPT_CREATE';
       messageRouter.registerRoute(messageType, mockHandler);
-      
+
       // Act
       messageRouter.unregisterRoute(messageType);
-      
+
       // Assert
       expect(messageRouter.isRouteRegistered(messageType)).toBe(false);
     });
@@ -109,11 +109,11 @@ describe('MessageRouter', () => {
       const messageType = 'PROMPT_CREATE';
       const firstHandler = vi.fn();
       const secondHandler = vi.fn();
-      
+
       // Act
       messageRouter.registerRoute(messageType, firstHandler);
       messageRouter.registerRoute(messageType, secondHandler);
-      
+
       // Assert
       expect(messageRouter.isRouteRegistered(messageType)).toBe(true);
       // Handler should be overwritten (tested in message routing)
@@ -122,14 +122,14 @@ describe('MessageRouter', () => {
     it('should handle multiple different route registrations', () => {
       // Arrange
       const messageTypes = ['PROMPT_CREATE', 'PROMPT_GET', 'CLIPBOARD_COPY'];
-      
+
       // Act
-      messageTypes.forEach(type => {
+      messageTypes.forEach((type) => {
         messageRouter.registerRoute(type, mockHandler);
       });
-      
+
       // Assert
-      messageTypes.forEach(type => {
+      messageTypes.forEach((type) => {
         expect(messageRouter.isRouteRegistered(type)).toBe(true);
       });
     });
@@ -149,7 +149,7 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { title: 'Test Prompt', content: 'Test content' }
+        payload: { title: 'Test Prompt', content: 'Test content' },
       };
 
       // Act
@@ -169,20 +169,20 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { title: 'Test Prompt', content: 'Test content' }
+        payload: { title: 'Test Prompt', content: 'Test content' },
       };
 
       // Act & Assert
-      await expect(messageRouter.routeMessage(message))
-        .rejects
-        .toThrow('No handler registered for message type: PROMPT_CREATE');
+      await expect(messageRouter.routeMessage(message)).rejects.toThrow(
+        'No handler registered for message type: PROMPT_CREATE'
+      );
     });
 
     it('should handle multiple different message types correctly', async () => {
       // Arrange
       const promptHandler = vi.fn().mockResolvedValue({ success: true, type: 'prompt' });
       const clipboardHandler = vi.fn().mockResolvedValue({ success: true, type: 'clipboard' });
-      
+
       messageRouter.registerRoute('PROMPT_CREATE', promptHandler);
       messageRouter.registerRoute('CLIPBOARD_COPY', clipboardHandler);
 
@@ -192,7 +192,7 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { title: 'Test', content: 'Content' }
+        payload: { title: 'Test', content: 'Content' },
       };
 
       const clipboardMessage: ClipboardMessage = {
@@ -201,7 +201,7 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { text: 'Copy this text' }
+        payload: { text: 'Copy this text' },
       };
 
       // Act
@@ -230,10 +230,8 @@ describe('MessageRouter', () => {
       // Act & Assert
       // This test assumes validation will be implemented
       // For now, we test that the handler receives the message as-is
-      await expect(messageRouter.routeMessage(invalidMessage))
-        .resolves
-        .not.toThrow();
-      
+      await expect(messageRouter.routeMessage(invalidMessage)).resolves.not.toThrow();
+
       expect(mockHandler).toHaveBeenCalledWith(invalidMessage);
     });
 
@@ -248,7 +246,7 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'content',
         target: 'background',
-        payload: { format: 'markdown', data: { conversation: 'test' } }
+        payload: { format: 'markdown', data: { conversation: 'test' } },
       };
 
       // Act
@@ -272,22 +270,20 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { id: 'prompt-123' }
+        payload: { id: 'prompt-123' },
       };
 
       // Act & Assert
-      await expect(messageRouter.routeMessage(message))
-        .rejects
-        .toThrow('Handler error');
+      await expect(messageRouter.routeMessage(message)).rejects.toThrow('Handler error');
     });
 
     it('should handle asynchronous handler rejections', async () => {
       // Arrange
       const asyncErrorHandler = vi.fn().mockImplementation(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
         throw new Error('Async handler error');
       });
-      
+
       messageRouter.registerRoute('PROMPT_UPDATE', asyncErrorHandler);
 
       const message: PromptMessage = {
@@ -296,13 +292,11 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { id: 'prompt-123', title: 'Updated' }
+        payload: { id: 'prompt-123', title: 'Updated' },
       };
 
       // Act & Assert
-      await expect(messageRouter.routeMessage(message))
-        .rejects
-        .toThrow('Async handler error');
+      await expect(messageRouter.routeMessage(message)).rejects.toThrow('Async handler error');
     });
   });
 
@@ -318,7 +312,7 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { id: 'prompt-123' }
+        payload: { id: 'prompt-123' },
       };
 
       // Act
@@ -342,12 +336,12 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { text: `Text ${i}` }
+        payload: { text: `Text ${i}` },
       }));
 
       // Act
       const startTime = performance.now();
-      const promises = messages.map(msg => messageRouter.routeMessage(msg));
+      const promises = messages.map((msg) => messageRouter.routeMessage(msg));
       await Promise.all(promises);
       const endTime = performance.now();
 
@@ -367,33 +361,27 @@ describe('MessageRouter', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: {}
+        payload: {},
       } as Message;
 
       // Act & Assert
-      await expect(messageRouter.routeMessage(message))
-        .rejects
-        .toThrow('No handler registered for message type: ');
+      await expect(messageRouter.routeMessage(message)).rejects.toThrow(
+        'No handler registered for message type: '
+      );
     });
 
     it('should handle null/undefined message', async () => {
       // Act & Assert
-      await expect(messageRouter.routeMessage(null as any))
-        .rejects
-        .toThrow();
-      
-      await expect(messageRouter.routeMessage(undefined as any))
-        .rejects
-        .toThrow();
+      await expect(messageRouter.routeMessage(null as any)).rejects.toThrow();
+
+      await expect(messageRouter.routeMessage(undefined as any)).rejects.toThrow();
     });
 
     it('should handle unregistering non-existent route', () => {
       // Act & Assert
       // Should not throw error when unregistering non-existent route
-      expect(() => messageRouter.unregisterRoute('NON_EXISTENT_TYPE'))
-        .not
-        .toThrow();
-      
+      expect(() => messageRouter.unregisterRoute('NON_EXISTENT_TYPE')).not.toThrow();
+
       expect(messageRouter.isRouteRegistered('NON_EXISTENT_TYPE')).toBe(false);
     });
   });

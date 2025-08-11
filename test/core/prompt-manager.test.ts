@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import type { 
-  Prompt, 
-  CreatePromptRequest, 
+import type {
+  Prompt,
+  CreatePromptRequest,
   UpdatePromptRequest,
-  PromptSearchOptions 
+  PromptSearchOptions,
 } from '../../src/types';
 import { PromptManager } from '../../src/core/prompt-manager';
 
@@ -11,7 +11,7 @@ import { PromptManager } from '../../src/core/prompt-manager';
 const mockStorageAdapter = {
   getPrompts: vi.fn(),
   savePrompt: vi.fn(),
-  updatePrompt: vi.fn(), 
+  updatePrompt: vi.fn(),
   deletePrompt: vi.fn(),
   getPrompt: vi.fn(), // Changed from getPrompt to getPrompt
   searchPrompts: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock('@/utils/id-generator', () => ({
 
 describe('PromptManager', () => {
   let promptManager: PromptManager;
-  
+
   const mockPrompt: Prompt = {
     id: 'prompt-123e4567-e89b-12d3-a456-test-id-12345',
     title: 'Test Prompt',
@@ -86,7 +86,7 @@ describe('PromptManager', () => {
       const multilineContent = `Line 1
 Line 2
 Line 3 with special chars: !@#$%^&*()`;
-      
+
       const createRequest: CreatePromptRequest = {
         title: 'Multiline Test',
         content: multilineContent,
@@ -159,8 +159,7 @@ Line 3 with special chars: !@#$%^&*()`;
         content: 'Valid content',
       };
 
-      await expect(promptManager.createPrompt(invalidRequest))
-        .rejects.toThrow('Title is required');
+      await expect(promptManager.createPrompt(invalidRequest)).rejects.toThrow('Title is required');
     });
 
     it('should reject empty content', async () => {
@@ -170,8 +169,9 @@ Line 3 with special chars: !@#$%^&*()`;
         content: '',
       };
 
-      await expect(promptManager.createPrompt(invalidRequest))
-        .rejects.toThrow('Content is required');
+      await expect(promptManager.createPrompt(invalidRequest)).rejects.toThrow(
+        'Content is required'
+      );
     });
 
     it('should reject title over 200 chars', async () => {
@@ -182,8 +182,9 @@ Line 3 with special chars: !@#$%^&*()`;
         content: 'Valid content',
       };
 
-      await expect(promptManager.createPrompt(invalidRequest))
-        .rejects.toThrow('Prompt title cannot exceed 200 characters');
+      await expect(promptManager.createPrompt(invalidRequest)).rejects.toThrow(
+        'Prompt title cannot exceed 200 characters'
+      );
     });
 
     it('should reject content over 10,000 chars', async () => {
@@ -194,8 +195,9 @@ Line 3 with special chars: !@#$%^&*()`;
         content: longContent,
       };
 
-      await expect(promptManager.createPrompt(invalidRequest))
-        .rejects.toThrow('Prompt content cannot exceed 10000 characters');
+      await expect(promptManager.createPrompt(invalidRequest)).rejects.toThrow(
+        'Prompt content cannot exceed 10000 characters'
+      );
     });
 
     it('should handle optional tags array', async () => {
@@ -243,28 +245,32 @@ Line 3 with special chars: !@#$%^&*()`;
       const result = await promptManager.getPrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345');
 
       expect(result).toEqual(mockPrompt);
-      expect(mockStorageAdapter.getPrompt).toHaveBeenCalledWith('prompt-123e4567-e89b-12d3-a456-test-id-12345');
+      expect(mockStorageAdapter.getPrompt).toHaveBeenCalledWith(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345'
+      );
     });
 
     it('should return null for non-existent ID', async () => {
       // 🟢 Blue: Consistent with existing implementation
       mockStorageAdapter.getPrompt.mockResolvedValue(null);
 
-      const result = await promptManager.getPrompt('prompt-000e0000-e00b-00d0-a000-nonexistent-00000');
+      const result = await promptManager.getPrompt(
+        'prompt-000e0000-e00b-00d0-a000-nonexistent-00000'
+      );
 
       expect(result).toBeNull();
     });
 
     it('should throw error for empty ID', async () => {
       // 🟢 Blue: Input validation requirement
-      await expect(promptManager.getPrompt(''))
-        .rejects.toThrow('Prompt ID is required');
+      await expect(promptManager.getPrompt('')).rejects.toThrow('Prompt ID is required');
     });
 
     it('should throw error for invalid ID format', async () => {
       // 🟢 Blue: UUID validation requirement
-      await expect(promptManager.getPrompt('invalid-id-format'))
-        .rejects.toThrow('Invalid prompt ID format');
+      await expect(promptManager.getPrompt('invalid-id-format')).rejects.toThrow(
+        'Invalid prompt ID format'
+      );
     });
   });
 
@@ -284,7 +290,10 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.updatePrompt.mockResolvedValue(updatedPrompt);
 
-      const result = await promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest);
+      const result = await promptManager.updatePrompt(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345',
+        updateRequest
+      );
 
       expect(result.title).toBe('Updated Title');
       expect(result.content).toBe(mockPrompt.content); // Unchanged
@@ -305,7 +314,10 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.updatePrompt.mockResolvedValue(updatedPrompt);
 
-      const result = await promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest);
+      const result = await promptManager.updatePrompt(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345',
+        updateRequest
+      );
 
       expect(result.title).toBe(mockPrompt.title); // Preserved
       expect(result.tags).toEqual(mockPrompt.tags); // Preserved
@@ -327,10 +339,14 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.updatePrompt.mockResolvedValue(updatedPrompt);
 
-      const result = await promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest);
+      const result = await promptManager.updatePrompt(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345',
+        updateRequest
+      );
 
-      expect(new Date(result.updatedAt).getTime())
-        .toBeGreaterThan(new Date(mockPrompt.updatedAt).getTime());
+      expect(new Date(result.updatedAt).getTime()).toBeGreaterThan(
+        new Date(mockPrompt.updatedAt).getTime()
+      );
     });
 
     it('should validate updated title length', async () => {
@@ -343,8 +359,9 @@ Line 3 with special chars: !@#$%^&*()`;
       // Mock the existing prompt
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
 
-      await expect(promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest))
-        .rejects.toThrow('Prompt title cannot exceed 200 characters');
+      await expect(
+        promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest)
+      ).rejects.toThrow('Prompt title cannot exceed 200 characters');
     });
 
     it('should validate updated content length', async () => {
@@ -357,8 +374,9 @@ Line 3 with special chars: !@#$%^&*()`;
       // Mock the existing prompt
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
 
-      await expect(promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest))
-        .rejects.toThrow('Prompt content cannot exceed 10000 characters');
+      await expect(
+        promptManager.updatePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345', updateRequest)
+      ).rejects.toThrow('Prompt content cannot exceed 10000 characters');
     });
 
     it('should throw error for non-existent ID', async () => {
@@ -369,8 +387,12 @@ Line 3 with special chars: !@#$%^&*()`;
         title: 'New Title',
       };
 
-      await expect(promptManager.updatePrompt('prompt-000e0000-e00b-00d0-a000-nonexistent-00000', updateRequest))
-        .rejects.toThrow('Prompt not found');
+      await expect(
+        promptManager.updatePrompt(
+          'prompt-000e0000-e00b-00d0-a000-nonexistent-00000',
+          updateRequest
+        )
+      ).rejects.toThrow('Prompt not found');
     });
   });
 
@@ -380,18 +402,23 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.deletePrompt.mockResolvedValue(true);
 
-      const result = await promptManager.deletePrompt('prompt-123e4567-e89b-12d3-a456-test-id-12345');
+      const result = await promptManager.deletePrompt(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345'
+      );
 
       expect(result).toBe(true);
-      expect(mockStorageAdapter.deletePrompt).toHaveBeenCalledWith('prompt-123e4567-e89b-12d3-a456-test-id-12345');
+      expect(mockStorageAdapter.deletePrompt).toHaveBeenCalledWith(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345'
+      );
     });
 
     it('should throw error for non-existent ID', async () => {
       // 🟢 Blue: Consistent error handling
       mockStorageAdapter.getPrompt.mockResolvedValue(null);
 
-      await expect(promptManager.deletePrompt('prompt-000e0000-e00b-00d0-a000-nonexistent-00000'))
-        .rejects.toThrow('Prompt not found');
+      await expect(
+        promptManager.deletePrompt('prompt-000e0000-e00b-00d0-a000-nonexistent-00000')
+      ).rejects.toThrow('Prompt not found');
     });
   });
 
@@ -411,7 +438,9 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.updatePrompt.mockResolvedValue(updatedPrompt);
 
-      const result = await promptManager.recordUsage('prompt-123e4567-e89b-12d3-a456-test-id-12345');
+      const result = await promptManager.recordUsage(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345'
+      );
 
       expect(result.metadata.usageCount).toBe(1);
     });
@@ -429,11 +458,12 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.updatePrompt.mockResolvedValue(updatedPrompt);
 
-      const result = await promptManager.recordUsage('prompt-123e4567-e89b-12d3-a456-test-id-12345');
+      const result = await promptManager.recordUsage(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345'
+      );
 
       expect(result.metadata.lastUsedAt).not.toBeNull();
-      expect(new Date(result.metadata.lastUsedAt!).getTime())
-        .toBeGreaterThan(0);
+      expect(new Date(result.metadata.lastUsedAt!).getTime()).toBeGreaterThan(0);
     });
 
     it('should update updatedAt timestamp', async () => {
@@ -446,7 +476,9 @@ Line 3 with special chars: !@#$%^&*()`;
       mockStorageAdapter.getPrompt.mockResolvedValue(mockPrompt);
       mockStorageAdapter.updatePrompt.mockResolvedValue(updatedPrompt);
 
-      const result = await promptManager.recordUsage('prompt-123e4567-e89b-12d3-a456-test-id-12345');
+      const result = await promptManager.recordUsage(
+        'prompt-123e4567-e89b-12d3-a456-test-id-12345'
+      );
 
       expect(result.updatedAt).not.toBe(mockPrompt.updatedAt);
     });
@@ -455,8 +487,9 @@ Line 3 with special chars: !@#$%^&*()`;
       // 🟢 Blue: Consistent error handling
       mockStorageAdapter.getPrompt.mockResolvedValue(null);
 
-      await expect(promptManager.recordUsage('prompt-000e0000-e00b-00d0-a000-nonexistent-00000'))
-        .rejects.toThrow('Prompt not found');
+      await expect(
+        promptManager.recordUsage('prompt-000e0000-e00b-00d0-a000-nonexistent-00000')
+      ).rejects.toThrow('Prompt not found');
     });
   });
 
@@ -484,12 +517,12 @@ Line 3 with special chars: !@#$%^&*()`;
         {
           ...mockPrompt,
           id: '1',
-          metadata: { ...mockPrompt.metadata, lastUsedAt: '2024-01-03T00:00:00.000Z' }
+          metadata: { ...mockPrompt.metadata, lastUsedAt: '2024-01-03T00:00:00.000Z' },
         },
         {
           ...mockPrompt,
           id: '2',
-          metadata: { ...mockPrompt.metadata, lastUsedAt: '2024-01-02T00:00:00.000Z' }
+          metadata: { ...mockPrompt.metadata, lastUsedAt: '2024-01-02T00:00:00.000Z' },
         },
       ];
 
@@ -547,7 +580,7 @@ Line 3 with special chars: !@#$%^&*()`;
       const result = await promptManager.searchPrompts(searchOptions);
 
       expect(result).toHaveLength(2);
-      result.forEach(prompt => {
+      result.forEach((prompt) => {
         expect(prompt.tags).toContain('js');
       });
     });

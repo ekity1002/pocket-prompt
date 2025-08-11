@@ -275,7 +275,7 @@ Line 4 with unicode: 日本語 🚀`;
         'prompt-abcd1234-5678-90ef-ghij-klmnopqrstuv',
       ];
 
-      validIds.forEach(id => {
+      validIds.forEach((id) => {
         const errors = PromptValidator.validatePromptId(id);
         expect(errors).toEqual([]);
       });
@@ -299,14 +299,9 @@ Line 4 with unicode: 日本語 🚀`;
 
     it('should reject invalid ID formats', () => {
       // 🟢 Blue: Format validation requirement
-      const invalidIds = [
-        'not-a-uuid',
-        '123',
-        'prompt',
-        'invalid-format-too-short',
-      ];
+      const invalidIds = ['not-a-uuid', '123', 'prompt', 'invalid-format-too-short'];
 
-      invalidIds.forEach(id => {
+      invalidIds.forEach((id) => {
         const errors = PromptValidator.validatePromptId(id);
         expect(errors).toContain('Invalid prompt ID format');
       });

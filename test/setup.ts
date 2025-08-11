@@ -9,7 +9,7 @@ const mockStorageData: Record<string, any> = {};
 // Global test setup
 beforeAll(() => {
   // Mock Chrome Extension APIs
-  
+
   Object.defineProperty(global, 'chrome', {
     value: {
       storage: {
@@ -150,8 +150,8 @@ expect.extend({
   toBeWithinRange(received: number, floor: number, ceiling: number) {
     const pass = received >= floor && received <= ceiling;
     return {
-      message: () => 
-        pass 
+      message: () =>
+        pass
           ? `expected ${received} not to be within range ${floor} - ${ceiling}`
           : `expected ${received} to be within range ${floor} - ${ceiling}`,
       pass,

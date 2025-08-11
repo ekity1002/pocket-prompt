@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 /**
  * AsyncResponseManager Test Suite
- * 
+ *
  * Tests the asynchronous response management functionality including:
  * - Request/response correlation with unique IDs
  * - Timeout handling for pending requests
@@ -53,7 +53,7 @@ class MockAsyncResponseManager implements AsyncResponseManager {
         timestamp: Date.now(),
         resolve,
         reject,
-        timeoutId
+        timeoutId,
       };
 
       this.pendingRequests.set(id, request);
@@ -153,9 +153,9 @@ describe('AsyncResponseManager', () => {
       const firstRequest = responseManager.createPendingRequest(requestId, 1000);
 
       // Act & Assert
-      await expect(responseManager.createPendingRequest(requestId, 1000))
-        .rejects
-        .toThrow(`Request with id ${requestId} already exists`);
+      await expect(responseManager.createPendingRequest(requestId, 1000)).rejects.toThrow(
+        `Request with id ${requestId} already exists`
+      );
 
       // Cleanup
       responseManager.resolveRequest(requestId, { success: true });
@@ -167,19 +167,17 @@ describe('AsyncResponseManager', () => {
       const requestIds = ['req-003', 'req-004', 'req-005'];
 
       // Act
-      const requests = requestIds.map(id => 
-        responseManager.createPendingRequest(id, 1000)
-      );
+      const requests = requestIds.map((id) => responseManager.createPendingRequest(id, 1000));
 
       // Assert
       expect(responseManager.getPendingRequestCount()).toBe(3);
       const pendingIds = responseManager.getAllPendingRequestIds();
-      requestIds.forEach(id => {
+      requestIds.forEach((id) => {
         expect(pendingIds).toContain(id);
       });
 
       // Cleanup
-      requestIds.forEach(id => {
+      requestIds.forEach((id) => {
         responseManager.resolveRequest(id, { success: true });
       });
       await Promise.all(requests);
@@ -223,7 +221,7 @@ describe('AsyncResponseManager', () => {
       // Assert
       expect(firstResolution).toBe(true);
       expect(secondResolution).toBe(false);
-      
+
       const response = await requestPromise;
       expect(response).toEqual({ first: true });
     });
@@ -265,7 +263,7 @@ describe('AsyncResponseManager', () => {
       // Assert
       expect(firstRejection).toBe(true);
       expect(secondRejection).toBe(false);
-      
+
       await expect(requestPromise).rejects.toThrow('First error');
     });
   });
@@ -280,10 +278,10 @@ describe('AsyncResponseManager', () => {
       const requestPromise = responseManager.createPendingRequest(requestId, timeoutMs);
 
       // Assert
-      await expect(requestPromise)
-        .rejects
-        .toThrow(`Request ${requestId} timed out after ${timeoutMs}ms`);
-      
+      await expect(requestPromise).rejects.toThrow(
+        `Request ${requestId} timed out after ${timeoutMs}ms`
+      );
+
       expect(responseManager.getPendingRequestCount()).toBe(0);
     });
 
@@ -306,14 +304,12 @@ describe('AsyncResponseManager', () => {
       // Arrange
       const shortRequestId = 'short-req';
       const longRequestId = 'long-req';
-      
+
       const shortRequest = responseManager.createPendingRequest(shortRequestId, 50);
       const longRequest = responseManager.createPendingRequest(longRequestId, 200);
 
       // Act & Assert
-      await expect(shortRequest)
-        .rejects
-        .toThrow('timed out after 50ms');
+      await expect(shortRequest).rejects.toThrow('timed out after 50ms');
 
       // Long request should still be pending
       expect(responseManager.getPendingRequestCount()).toBe(1);
@@ -342,7 +338,7 @@ describe('AsyncResponseManager', () => {
     it('should cleanup all requests', async () => {
       // Arrange
       const requestIds = ['req-013', 'req-014', 'req-015'];
-      requestIds.forEach(id => {
+      requestIds.forEach((id) => {
         responseManager.createPendingRequest(id, 1000);
       });
 
@@ -356,9 +352,7 @@ describe('AsyncResponseManager', () => {
 
     it('should handle cleanup of non-existent request gracefully', () => {
       // Act & Assert
-      expect(() => responseManager.cleanupRequest('non-existent'))
-        .not
-        .toThrow();
+      expect(() => responseManager.cleanupRequest('non-existent')).not.toThrow();
     });
   });
 
@@ -370,9 +364,7 @@ describe('AsyncResponseManager', () => {
 
       // Act
       const startTime = performance.now();
-      const requests = requestIds.map(id => 
-        responseManager.createPendingRequest(id, 1000)
-      );
+      const requests = requestIds.map((id) => responseManager.createPendingRequest(id, 1000));
 
       // Assert creation performance
       const creationTime = performance.now() - startTime;
@@ -395,9 +387,7 @@ describe('AsyncResponseManager', () => {
     it('should handle mixed resolution and rejection of concurrent requests', async () => {
       // Arrange
       const requestIds = ['mixed-1', 'mixed-2', 'mixed-3', 'mixed-4'];
-      const requests = requestIds.map(id => 
-        responseManager.createPendingRequest(id, 1000)
-      );
+      const requests = requestIds.map((id) => responseManager.createPendingRequest(id, 1000));
 
       // Act
       responseManager.resolveRequest('mixed-1', { success: true });
@@ -440,7 +430,7 @@ describe('AsyncResponseManager', () => {
 
       // Act
       responseManager.rejectRequest(requestId, new Error('Test error'));
-      
+
       try {
         await requestPromise;
       } catch (error) {
@@ -473,46 +463,38 @@ describe('AsyncResponseManager', () => {
   describe('Edge Cases', () => {
     it('should handle empty request ID', async () => {
       // Act & Assert
-      await expect(responseManager.createPendingRequest('', 1000))
-        .rejects
-        .toThrow();
+      await expect(responseManager.createPendingRequest('', 1000)).rejects.toThrow();
     });
 
     it('should handle null/undefined request ID', async () => {
       // Act & Assert
-      await expect(responseManager.createPendingRequest(null as any, 1000))
-        .rejects
-        .toThrow();
+      await expect(responseManager.createPendingRequest(null as any, 1000)).rejects.toThrow();
 
-      await expect(responseManager.createPendingRequest(undefined as any, 1000))
-        .rejects
-        .toThrow();
+      await expect(responseManager.createPendingRequest(undefined as any, 1000)).rejects.toThrow();
     });
 
     it('should handle zero timeout', async () => {
       // Arrange
       const requestId = 'zero-timeout';
-      
+
       // Act
       const requestPromise = responseManager.createPendingRequest(requestId, 0);
 
       // Assert
-      await expect(requestPromise)
-        .rejects
-        .toThrow('timed out after 0ms');
+      await expect(requestPromise).rejects.toThrow('timed out after 0ms');
     });
 
     it('should handle negative timeout', async () => {
       // Arrange
       const requestId = 'negative-timeout';
-      
+
       // Act & Assert
       // Should either handle gracefully or use default timeout
       const requestPromise = responseManager.createPendingRequest(requestId, -100);
-      
+
       // Immediately resolve to prevent hanging
       responseManager.resolveRequest(requestId, { success: true });
-      
+
       await expect(requestPromise).resolves.toEqual({ success: true });
     });
   });

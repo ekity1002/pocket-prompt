@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./src/**/*.{js,ts,jsx,tsx,html}",
-    "./public/**/*.html",
-  ],
+  content: ['./src/**/*.{js,ts,jsx,tsx,html}', './public/**/*.html'],
   theme: {
     extend: {
       colors: {
@@ -31,16 +28,16 @@ export default {
           700: '#616161',
           800: '#424242',
           900: '#212121',
-        }
+        },
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
+        18: '4.5rem',
+        88: '22rem',
       },
       fontSize: {
         '2xs': ['0.625rem', { lineHeight: '0.75rem' }],
-      }
+      },
     },
   },
   plugins: [],
-}
+};
