@@ -388,7 +388,7 @@ export class PromptEditor {
     // Content counter
     const contentLength = this.state.prompt.content?.length || 0;
     const contentMax = 10000;
-    this.elements.contentCounter.textContent = `${contentLength}/${contentMax}`;
+    this.elements.contentCounter.textContent = `${contentLength.toLocaleString()}/${contentMax.toLocaleString()}`;
     this.elements.contentCounter.className = this.getCounterClass(contentLength, contentMax);
   }
 
@@ -540,10 +540,14 @@ export class PromptEditor {
   }
 
   private showValidationErrors(): void {
-    const firstInvalidField = this.elements.modal.querySelector('.field-error') as HTMLElement;
+    const firstInvalidField = this.elements.modal.querySelector(
+      '.field-input.field-error, .field-textarea.field-error'
+    ) as HTMLElement;
     if (firstInvalidField) {
       firstInvalidField.focus();
-      firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (firstInvalidField.scrollIntoView) {
+        firstInvalidField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   }
 

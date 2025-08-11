@@ -3,12 +3,7 @@
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { ErrorManager } from '../../src/core/error-manager';
-import type { 
-  ErrorContext, 
-  UserErrorInfo, 
-  ErrorStatistics,
-  ErrorLevel 
-} from '../../src/types';
+import type { ErrorContext, UserErrorInfo, ErrorStatistics, ErrorLevel } from '../../src/types';
 
 // Mock Chrome APIs
 const mockChrome = {
@@ -167,7 +162,7 @@ describe('ErrorManager', () => {
       // 🟡 Yellow: Service worker specific error handling
       const swError = new Error('Service worker inactive');
       Object.assign(swError, { name: 'InvalidStateError' });
-      
+
       const context: ErrorContext = {
         module: 'BackgroundScript',
         function: 'handleMessage',
@@ -208,7 +203,7 @@ describe('ErrorManager', () => {
     it('should convert technical errors to user-friendly messages in Japanese', () => {
       // 🟢 Blue: User-friendly error message requirement
       const quotaError = new DOMException('QuotaExceededError');
-      
+
       const userError = ErrorManager.handleUserError(quotaError);
 
       expect(userError).toEqual({
@@ -217,7 +212,7 @@ describe('ErrorManager', () => {
         actionable: true,
         actions: [
           { label: 'データを整理', action: 'cleanup' },
-          { label: '設定を確認', action: 'settings' }
+          { label: '設定を確認', action: 'settings' },
         ],
         severity: 'error',
       });
@@ -226,10 +221,12 @@ describe('ErrorManager', () => {
     it('should convert technical errors to user-friendly messages in English', () => {
       // 🟢 Blue: Multi-language support requirement
       const networkError = new Error('Failed to fetch');
-      
+
       const message = ErrorManager.getErrorMessage(networkError, 'en');
 
-      expect(message).toBe('Network connection failed. Please check your internet connection and try again.');
+      expect(message).toBe(
+        'Network connection failed. Please check your internet connection and try again.'
+      );
     });
 
     it('should handle permission errors with user guidance', () => {
@@ -245,7 +242,7 @@ describe('ErrorManager', () => {
         actionable: true,
         actions: [
           { label: '権限設定', action: 'permissions' },
-          { label: 'ヘルプ', action: 'help' }
+          { label: 'ヘルプ', action: 'help' },
         ],
         severity: 'warning',
       });
@@ -268,15 +265,15 @@ describe('ErrorManager', () => {
     beforeEach(() => {
       const testStats = {
         totalErrors: 10,
-        errorsByType: { 'QuotaExceededError': 3, 'NetworkError': 7 },
-        errorsByModule: { 'StorageManager': 5, 'ClipboardManager': 5 },
+        errorsByType: { QuotaExceededError: 3, NetworkError: 7 },
+        errorsByModule: { StorageManager: 5, ClipboardManager: 5 },
         lastUpdated: new Date().toISOString(),
       };
-      
+
       // Reset and setup chrome storage mocks for each test
       mockChrome.storage.local.get.mockClear();
       mockChrome.storage.local.set.mockClear();
-      
+
       mockChrome.storage.local.get.mockImplementation((keys) => {
         if (Array.isArray(keys) && keys.includes('errorStats')) {
           return Promise.resolve({ errorStats: testStats });
@@ -286,7 +283,7 @@ describe('ErrorManager', () => {
         }
         return Promise.resolve({ errorStats: testStats });
       });
-      
+
       mockChrome.storage.local.set.mockResolvedValue(undefined);
     });
 
@@ -297,12 +294,12 @@ describe('ErrorManager', () => {
       expect(stats).toEqual({
         totalErrors: 10,
         errorsByType: expect.objectContaining({
-          'QuotaExceededError': 3,
-          'NetworkError': 7,
+          QuotaExceededError: 3,
+          NetworkError: 7,
         }),
         errorsByModule: expect.objectContaining({
-          'StorageManager': 5,
-          'ClipboardManager': 5,
+          StorageManager: 5,
+          ClipboardManager: 5,
         }),
         errorRate: expect.any(Number),
         lastUpdated: expect.any(String),
@@ -325,7 +322,7 @@ describe('ErrorManager', () => {
             totalErrors: expect.any(Number),
             errorsByType: expect.any(Object),
             errorsByModule: expect.any(Object),
-          })
+          }),
         })
       );
     });
@@ -335,12 +332,12 @@ describe('ErrorManager', () => {
       mockChrome.storage.local.get.mockResolvedValue({
         errorStats: {
           totalErrors: 100,
-          errorsByType: { 
-            'QuotaExceededError': 50, 
-            'NetworkError': 30,
-            'ValidationError': 20,
+          errorsByType: {
+            QuotaExceededError: 50,
+            NetworkError: 30,
+            ValidationError: 20,
           },
-        }
+        },
       });
 
       const stats = await ErrorManager.getErrorStats();
@@ -358,7 +355,7 @@ describe('ErrorManager', () => {
       const context: ErrorContext = {
         module: 'PerformanceModule',
         function: 'measurePerformance',
-        metadata: { duration: 5000, threshold: 1000 }
+        metadata: { duration: 5000, threshold: 1000 },
       };
 
       await ErrorManager.logError(performanceError, context);
@@ -370,7 +367,7 @@ describe('ErrorManager', () => {
           metadata: expect.objectContaining({
             duration: 5000,
             threshold: 1000,
-          })
+          }),
         })
       );
     });
@@ -380,14 +377,14 @@ describe('ErrorManager', () => {
     it('should collect detailed debug information in development mode', async () => {
       // 🟡 Yellow: Development mode debug information
       process.env.NODE_ENV = 'development';
-      
+
       const debugError = new Error('Debug test error');
       debugError.stack = 'Error: Debug test error\n    at test.js:10:5';
-      
+
       const context: ErrorContext = {
         module: 'DebugModule',
         function: 'debugFunction',
-        metadata: { debugInfo: 'additional debug data' }
+        metadata: { debugInfo: 'additional debug data' },
       };
 
       await ErrorManager.logError(debugError, context);
@@ -398,7 +395,7 @@ describe('ErrorManager', () => {
           stack: expect.stringContaining('test.js:10:5'),
           debugMode: true,
           metadata: expect.objectContaining({
-            debugInfo: 'additional debug data'
+            debugInfo: 'additional debug data',
           }),
           environment: 'development',
         })
@@ -415,7 +412,7 @@ describe('ErrorManager', () => {
       const context: ErrorContext = {
         module: 'ProductionModule',
         function: 'prodFunction',
-        metadata: { sensitiveData: 'should not be logged' }
+        metadata: { sensitiveData: 'should not be logged' },
       };
 
       await ErrorManager.logError(prodError, context);
@@ -433,8 +430,8 @@ describe('ErrorManager', () => {
         expect.anything(),
         expect.objectContaining({
           metadata: expect.objectContaining({
-            sensitiveData: expect.anything()
-          })
+            sensitiveData: expect.anything(),
+          }),
         })
       );
 
@@ -452,8 +449,8 @@ describe('ErrorManager', () => {
           timestamp: new Date().toISOString(),
           currentUrl: window.location?.href || 'chrome-extension://test',
           userActions: ['click-button', 'submit-form'],
-          systemState: { memoryUsage: 'high', networkStatus: 'online' }
-        }
+          systemState: { memoryUsage: 'high', networkStatus: 'online' },
+        },
       };
 
       await ErrorManager.logError(reproError, context);
@@ -468,8 +465,8 @@ describe('ErrorManager', () => {
             systemState: expect.objectContaining({
               memoryUsage: 'high',
               networkStatus: 'online',
-            })
-          })
+            }),
+          }),
         })
       );
     });
@@ -480,7 +477,7 @@ describe('ErrorManager', () => {
       // 🟡 Yellow: Edge case handling
       const circularObj: any = { name: 'circular' };
       circularObj.self = circularObj;
-      
+
       const context: ErrorContext = {
         module: 'CircularModule',
         metadata: circularObj,
@@ -500,7 +497,7 @@ describe('ErrorManager', () => {
         metadata: {
           largeData: 'x'.repeat(10000), // 10KB string
           arrayData: new Array(1000).fill('data'),
-        }
+        },
       };
 
       const startTime = performance.now();
@@ -519,9 +516,7 @@ describe('ErrorManager', () => {
         function: `concurrentFunction${i}`,
       }));
 
-      const promises = errors.map((error, i) => 
-        ErrorManager.logError(error, contexts[i])
-      );
+      const promises = errors.map((error, i) => ErrorManager.logError(error, contexts[i]));
 
       await expect(Promise.all(promises)).resolves.not.toThrow();
       expect(console.error).toHaveBeenCalledTimes(10);
@@ -530,7 +525,7 @@ describe('ErrorManager', () => {
     it('should report critical errors with appropriate severity', async () => {
       // 🔴 Red: Critical error reporting
       const criticalError = new Error('System failure - critical error');
-      
+
       await ErrorManager.reportCriticalError(criticalError);
 
       expect(console.error).toHaveBeenCalledWith(

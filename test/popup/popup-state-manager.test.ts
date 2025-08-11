@@ -18,15 +18,18 @@ const createMockElement = (id: string, className?: string): HTMLElement => {
 const setupMockDOM = (): void => {
   // Clear document body
   document.body.innerHTML = '';
-  
+
   // Create required elements
   const elements = [
     { id: 'loading-state', children: [{ className: 'loading-text', textContent: '' }] },
-    { id: 'error-state', children: [
-      { id: 'error-title', textContent: '' },
-      { id: 'error-message', textContent: '' },
-      { id: 'error-actions', innerHTML: '' },
-    ]},
+    {
+      id: 'error-state',
+      children: [
+        { id: 'error-title', textContent: '' },
+        { id: 'error-message', textContent: '' },
+        { id: 'error-actions', innerHTML: '' },
+      ],
+    },
     { id: 'empty-state' },
     { id: 'success-state', children: [{ className: 'success-message', textContent: '' }] },
     { id: 'content-container' },
@@ -39,15 +42,15 @@ const setupMockDOM = (): void => {
     const element = document.createElement(tagName);
     element.id = id;
     Object.assign(element, attrs);
-    
+
     if (children) {
-      children.forEach(child => {
+      children.forEach((child) => {
         const childElement = document.createElement('div');
         Object.assign(childElement, child);
         element.appendChild(childElement);
       });
     }
-    
+
     document.body.appendChild(element);
   });
 
@@ -62,13 +65,15 @@ const setupMockDOM = (): void => {
 vi.mock('../../src/core/error-manager', () => ({
   ErrorManager: {
     logError: vi.fn(),
-    handleUserError: vi.fn((error: Error): UserErrorInfo => ({
-      title: 'テストエラー',
-      message: error.message,
-      actionable: true,
-      actions: [{ label: '再試行', action: 'retry' }],
-      severity: 'error',
-    })),
+    handleUserError: vi.fn(
+      (error: Error): UserErrorInfo => ({
+        title: 'テストエラー',
+        message: error.message,
+        actionable: true,
+        actions: [{ label: '再試行', action: 'retry' }],
+        severity: 'error',
+      })
+    ),
   },
 }));
 
@@ -89,7 +94,7 @@ describe('PopupStateManager', () => {
     it('should initialize with loading state', () => {
       // 🟢 Blue: Initial state requirement
       const state = stateManager.getState();
-      
+
       expect(state.currentView).toBe('loading');
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
@@ -103,10 +108,10 @@ describe('PopupStateManager', () => {
         currentView: 'content' as UIViewState,
         data: ['test', 'data'],
       };
-      
+
       stateManager.setState(newState);
       const state = stateManager.getState();
-      
+
       expect(state.currentView).toBe('content');
       expect(state.data).toEqual(['test', 'data']);
     });
@@ -115,17 +120,15 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Observer pattern requirement
       const listener = vi.fn();
       const unsubscribe = stateManager.subscribe(listener);
-      
+
       stateManager.setState({ currentView: 'empty' });
-      
-      expect(listener).toHaveBeenCalledWith(
-        expect.objectContaining({ currentView: 'empty' })
-      );
-      
+
+      expect(listener).toHaveBeenCalledWith(expect.objectContaining({ currentView: 'empty' }));
+
       // Test unsubscribe
       unsubscribe();
       stateManager.setState({ currentView: 'content' });
-      
+
       expect(listener).toHaveBeenCalledTimes(1);
     });
 
@@ -133,10 +136,10 @@ describe('PopupStateManager', () => {
       // 🟡 Yellow: Data integrity requirement
       const state1 = stateManager.getState();
       const state2 = stateManager.getState();
-      
+
       expect(state1).not.toBe(state2); // Different object references
-      expect(state1).toEqual(state2);  // Same content
-      
+      expect(state1).toEqual(state2); // Same content
+
       // Modifying returned state should not affect internal state
       (state1 as any).currentView = 'modified';
       expect(stateManager.getState().currentView).not.toBe('modified');
@@ -148,11 +151,11 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Loading state display requirement
       const customMessage = 'データを保存中...';
       stateManager.showLoading(customMessage);
-      
+
       const state = stateManager.getState();
       const loadingElement = document.getElementById('loading-state');
       const loadingText = loadingElement?.querySelector('.loading-text');
-      
+
       expect(state.currentView).toBe('loading');
       expect(state.isLoading).toBe(true);
       expect(loadingElement?.hidden).toBe(false);
@@ -162,14 +165,14 @@ describe('PopupStateManager', () => {
     it('should show error state with user-friendly error info', async () => {
       // 🟢 Blue: Error state display requirement
       const testError = new Error('Test error message');
-      
+
       await stateManager.handleError(testError);
-      
+
       const state = stateManager.getState();
       const errorElement = document.getElementById('error-state');
       const errorTitle = document.getElementById('error-title');
       const errorMessage = document.getElementById('error-message');
-      
+
       expect(state.currentView).toBe('error');
       expect(state.error).toBeTruthy();
       expect(errorElement?.hidden).toBe(false);
@@ -180,10 +183,10 @@ describe('PopupStateManager', () => {
     it('should show empty state', () => {
       // 🟢 Blue: Empty state display requirement
       stateManager.showEmpty();
-      
+
       const state = stateManager.getState();
       const emptyElement = document.getElementById('empty-state');
-      
+
       expect(state.currentView).toBe('empty');
       expect(state.isLoading).toBe(false);
       expect(state.error).toBeNull();
@@ -195,10 +198,10 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Content state display requirement
       const testData = [{ id: 1, title: 'Test Prompt' }];
       stateManager.showContent(testData);
-      
+
       const state = stateManager.getState();
       const contentElement = document.getElementById('content-container');
-      
+
       expect(state.currentView).toBe('content');
       expect(state.data).toEqual(testData);
       expect(contentElement?.hidden).toBe(false);
@@ -208,24 +211,24 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Success state display requirement
       const successMessage = 'プロンプトが保存されました';
       const testData = [{ id: 1, title: 'Test' }];
-      
+
       // Set some content first
       stateManager.showContent(testData);
-      
+
       // Show success with short duration for testing
       stateManager.showSuccess(successMessage, 100);
-      
+
       const state = stateManager.getState();
       const successElement = document.getElementById('success-state');
       const successMessageElement = successElement?.querySelector('.success-message');
-      
+
       expect(state.currentView).toBe('success');
       expect(successElement?.hidden).toBe(false);
       expect(successMessageElement?.textContent).toBe(successMessage);
-      
+
       // Wait for auto-hide
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       const finalState = stateManager.getState();
       expect(finalState.currentView).toBe('content');
     });
@@ -239,19 +242,14 @@ describe('PopupStateManager', () => {
         actions: [],
         severity: 'error',
       });
-      
-      const allStates = [
-        'loading-state',
-        'empty-state', 
-        'success-state',
-        'content-container',
-      ];
-      
-      allStates.forEach(stateId => {
+
+      const allStates = ['loading-state', 'empty-state', 'success-state', 'content-container'];
+
+      allStates.forEach((stateId) => {
         const element = document.getElementById(stateId);
         expect(element?.hidden).toBe(true);
       });
-      
+
       const errorElement = document.getElementById('error-state');
       expect(errorElement?.hidden).toBe(false);
     });
@@ -262,11 +260,11 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Search functionality requirement
       const searchQuery = 'test query';
       stateManager.setSearchQuery(searchQuery);
-      
+
       const state = stateManager.getState();
       const searchInput = document.getElementById('search-input') as HTMLInputElement;
       const searchClear = document.querySelector('.search-clear') as HTMLElement;
-      
+
       expect(state.searchQuery).toBe(searchQuery);
       expect(searchInput.value).toBe(searchQuery);
       expect(searchClear.hidden).toBe(false);
@@ -276,11 +274,11 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Search clear functionality
       stateManager.setSearchQuery('test query');
       stateManager.clearSearch();
-      
+
       const state = stateManager.getState();
       const searchInput = document.getElementById('search-input') as HTMLInputElement;
       const searchClear = document.querySelector('.search-clear') as HTMLElement;
-      
+
       expect(state.searchQuery).toBe('');
       expect(searchInput.value).toBe('');
       expect(searchClear.hidden).toBe(true);
@@ -289,11 +287,11 @@ describe('PopupStateManager', () => {
     it('should handle search input events', () => {
       // 🟡 Yellow: Event handling integration
       const searchInput = document.getElementById('search-input') as HTMLInputElement;
-      
+
       // Simulate user typing
       searchInput.value = 'new query';
       searchInput.dispatchEvent(new Event('input'));
-      
+
       const state = stateManager.getState();
       expect(state.searchQuery).toBe('new query');
     });
@@ -301,11 +299,11 @@ describe('PopupStateManager', () => {
     it('should handle escape key to clear search', () => {
       // 🟡 Yellow: Keyboard interaction
       stateManager.setSearchQuery('test query');
-      
+
       const searchInput = document.getElementById('search-input') as HTMLInputElement;
       const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
       searchInput.dispatchEvent(escapeEvent);
-      
+
       const state = stateManager.getState();
       expect(state.searchQuery).toBe('');
     });
@@ -316,11 +314,11 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Keyboard accessibility requirement
       const searchInput = document.getElementById('search-input') as HTMLInputElement;
       const focusSpy = vi.spyOn(searchInput, 'focus');
-      
+
       // Test Ctrl+F for search focus
       const ctrlF = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true });
       document.dispatchEvent(ctrlF);
-      
+
       expect(focusSpy).toHaveBeenCalled();
     });
 
@@ -328,7 +326,7 @@ describe('PopupStateManager', () => {
       // 🟡 Yellow: Help system requirement
       const helpEvent = new KeyboardEvent('keydown', { key: '?' });
       document.dispatchEvent(helpEvent);
-      
+
       const keyboardHelp = document.getElementById('keyboard-help');
       expect(keyboardHelp?.hidden).toBe(false);
     });
@@ -337,10 +335,10 @@ describe('PopupStateManager', () => {
       // 🟡 Yellow: Modal interaction
       const keyboardHelp = document.getElementById('keyboard-help');
       keyboardHelp!.hidden = false;
-      
+
       const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
       document.dispatchEvent(escapeEvent);
-      
+
       expect(keyboardHelp?.hidden).toBe(true);
     });
   });
@@ -350,7 +348,7 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Error recovery requirement
       const retryListener = vi.fn();
       window.addEventListener('popup:retry', retryListener);
-      
+
       const errorState: UserErrorInfo = {
         title: 'Test Error',
         message: 'Test message',
@@ -358,19 +356,19 @@ describe('PopupStateManager', () => {
         actions: [{ label: '再試行', action: 'retry' }],
         severity: 'error',
       };
-      
+
       stateManager.showError(errorState);
-      
+
       // Simulate clicking retry button
       const errorActions = document.getElementById('error-actions');
       const retryButton = errorActions?.querySelector('[data-action="retry"]') as HTMLElement;
-      
+
       expect(retryButton).toBeTruthy();
       expect(retryButton.textContent).toBe('再試行');
-      
+
       retryButton.click();
       expect(retryListener).toHaveBeenCalled();
-      
+
       window.removeEventListener('popup:retry', retryListener);
     });
 
@@ -380,11 +378,11 @@ describe('PopupStateManager', () => {
         'popup:cleanup': vi.fn(),
         'popup:settings': vi.fn(),
       };
-      
+
       Object.entries(actionListeners).forEach(([event, listener]) => {
         window.addEventListener(event, listener);
       });
-      
+
       const errorState: UserErrorInfo = {
         title: 'Storage Error',
         message: 'Storage full',
@@ -395,21 +393,21 @@ describe('PopupStateManager', () => {
         ],
         severity: 'error',
       };
-      
+
       stateManager.showError(errorState);
-      
+
       const errorActions = document.getElementById('error-actions');
       const cleanupButton = errorActions?.querySelector('[data-action="cleanup"]') as HTMLElement;
       const settingsButton = errorActions?.querySelector('[data-action="settings"]') as HTMLElement;
-      
+
       cleanupButton.click();
       settingsButton.click();
-      
+
       expect(actionListeners['popup:cleanup']).toHaveBeenCalled();
       expect(actionListeners['popup:settings']).toHaveBeenCalled();
-      
+
       // Cleanup
-      Object.keys(actionListeners).forEach(event => {
+      Object.keys(actionListeners).forEach((event) => {
         window.removeEventListener(event, actionListeners[event]);
       });
     });
@@ -420,24 +418,24 @@ describe('PopupStateManager', () => {
       // 🟢 Blue: Screen reader support requirement
       // Test the announcement functionality directly
       const spy = vi.spyOn(document, 'createElement');
-      
+
       // First call showLoading to trigger state change
       stateManager.showLoading('テストメッセージ');
-      
+
       // Should have attempted to create live region
       expect(spy).toHaveBeenCalledWith('div');
-      
+
       // Check that live region was created with proper attributes
       const liveRegion = document.getElementById('sr-live-region');
       expect(liveRegion).toBeTruthy();
       expect(liveRegion?.getAttribute('aria-live')).toBe('polite');
       expect(liveRegion?.getAttribute('aria-atomic')).toBe('true');
       expect(liveRegion?.textContent).toBe('プロンプトを読み込み中です');
-      
+
       // Test another state change
       stateManager.showEmpty();
       expect(liveRegion?.textContent).toBe('プロンプトがありません');
-      
+
       spy.mockRestore();
     });
 
@@ -447,29 +445,25 @@ describe('PopupStateManager', () => {
       const closeButton = document.createElement('button');
       closeButton.className = 'help-close';
       keyboardHelp?.appendChild(closeButton);
-      
+
       const focusSpy = vi.spyOn(closeButton, 'focus');
-      
+
       // Simulate showing help
       const helpEvent = new KeyboardEvent('keydown', { key: '?' });
       document.dispatchEvent(helpEvent);
-      
+
       expect(focusSpy).toHaveBeenCalled();
     });
 
     it('should update prompt count for screen readers', () => {
       // 🟡 Yellow: Dynamic content announcements
-      const testData = [
-        { title: 'Prompt 1' },
-        { title: 'Prompt 2' },
-        { title: 'Prompt 3' },
-      ];
-      
+      const testData = [{ title: 'Prompt 1' }, { title: 'Prompt 2' }, { title: 'Prompt 3' }];
+
       stateManager.showContent(testData);
-      
+
       const promptCount = document.getElementById('prompt-count');
       expect(promptCount?.textContent).toBe('3件のプロンプト');
-      
+
       // Test filtered count
       stateManager.setSearchQuery('Prompt 1');
       expect(promptCount?.textContent).toContain('1件見つかりました');
@@ -480,7 +474,7 @@ describe('PopupStateManager', () => {
     it('should handle missing DOM elements gracefully', () => {
       // 🔴 Red: Error resilience
       document.body.innerHTML = ''; // Remove all elements
-      
+
       expect(() => {
         new PopupStateManager();
       }).toThrow('Required element not found');
@@ -491,15 +485,15 @@ describe('PopupStateManager', () => {
       const errorListener = vi.fn(() => {
         throw new Error('Listener error');
       });
-      
+
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
+
       stateManager.subscribe(errorListener);
       stateManager.setState({ currentView: 'content' });
-      
+
       // Should not throw, but should log error
       expect(consoleSpy).toHaveBeenCalledWith('Error in state listener:', expect.any(Error));
-      
+
       consoleSpy.mockRestore();
     });
 
@@ -507,12 +501,12 @@ describe('PopupStateManager', () => {
       // 🟡 Yellow: State consistency under load
       const listener = vi.fn();
       stateManager.subscribe(listener);
-      
+
       // Rapid state changes
       stateManager.setState({ currentView: 'loading' });
       stateManager.setState({ currentView: 'content' });
       stateManager.setState({ currentView: 'empty' });
-      
+
       expect(listener).toHaveBeenCalledTimes(3);
       expect(stateManager.getState().currentView).toBe('empty');
     });
@@ -521,11 +515,11 @@ describe('PopupStateManager', () => {
       // 🟡 Yellow: Event system integration
       const createPromptListener = vi.fn();
       window.addEventListener('popup:create-prompt', createPromptListener);
-      
+
       // Test global function
       (window as any).createPrompt();
       expect(createPromptListener).toHaveBeenCalled();
-      
+
       window.removeEventListener('popup:create-prompt', createPromptListener);
     });
   });

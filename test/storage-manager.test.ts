@@ -57,7 +57,7 @@ const mockSettings: Settings = {
 describe('StorageManager - Basic CRUD Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Default mock responses
     mockChromeStorageSync.get.mockResolvedValue({});
     mockChromeStorageSync.set.mockResolvedValue(undefined);
@@ -72,9 +72,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
   describe('🟢 Basic Prompt Operations', () => {
     it('should get empty prompts array when no prompts exist', async () => {
       mockChromeStorageSync.get.mockResolvedValue({}); // Empty result
-      
+
       const prompts = await StorageManager.getPrompts();
-      
+
       expect(prompts).toEqual([]);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(['prompts']);
     });
@@ -82,9 +82,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
     it('should get existing prompts from storage', async () => {
       const existingPrompts = [mockPrompt];
       mockChromeStorageSync.get.mockResolvedValue({ prompts: existingPrompts });
-      
+
       const prompts = await StorageManager.getPrompts();
-      
+
       expect(prompts).toEqual(existingPrompts);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(['prompts']);
     });
@@ -95,23 +95,23 @@ describe('StorageManager - Basic CRUD Operations', () => {
         .mockResolvedValueOnce({ prompts: existingPrompts }) // getPrompts call
         .mockResolvedValueOnce({ categories: [] }) // getCategories call
         .mockResolvedValueOnce({ tags: [] }); // getTags call
-      
+
       const newPromptData = {
         title: 'New Test Prompt',
         content: 'New test content',
         category: 'new-category',
         tags: ['new', 'tag'],
       };
-      
+
       const savedPrompt = await StorageManager.savePrompt(newPromptData);
-      
+
       expect(savedPrompt).toMatchObject({
         ...newPromptData,
         id: expect.any(String),
         createdAt: expect.any(String),
         updatedAt: expect.any(String),
       });
-      
+
       // Verify storage calls
       expect(mockChromeStorageSync.set).toHaveBeenCalledTimes(3); // prompts, categories, tags
     });
@@ -122,29 +122,29 @@ describe('StorageManager - Basic CRUD Operations', () => {
         .mockResolvedValueOnce({ prompts: existingPrompts })
         .mockResolvedValueOnce({ categories: [] })
         .mockResolvedValueOnce({ tags: [] });
-      
+
       const updates = {
         title: 'Updated Title',
         content: 'Updated content',
       };
-      
+
       const updatedPrompt = await StorageManager.updatePrompt(mockPrompt.id, updates);
-      
+
       expect(updatedPrompt).toMatchObject({
         ...mockPrompt,
         ...updates,
         updatedAt: expect.any(String),
       });
-      
+
       expect(mockChromeStorageSync.set).toHaveBeenCalledTimes(3);
     });
 
     it('should delete a prompt successfully', async () => {
       const existingPrompts = [mockPrompt, { ...mockPrompt, id: 'prompt-2' }];
       mockChromeStorageSync.get.mockResolvedValue({ prompts: existingPrompts });
-      
+
       await StorageManager.deletePrompt(mockPrompt.id);
-      
+
       expect(mockChromeStorageSync.set).toHaveBeenCalledWith({
         prompts: [{ ...mockPrompt, id: 'prompt-2' }],
       });
@@ -152,7 +152,7 @@ describe('StorageManager - Basic CRUD Operations', () => {
 
     it('should throw error when updating non-existent prompt', async () => {
       mockChromeStorageSync.get.mockResolvedValue({ prompts: [] });
-      
+
       await expect(
         StorageManager.updatePrompt('non-existent-id', { title: 'Updated' })
       ).rejects.toThrow('Prompt not found');
@@ -162,9 +162,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
   describe('🟢 Settings Operations', () => {
     it('should get default settings when no settings exist', async () => {
       mockChromeStorageSync.get.mockResolvedValue({});
-      
+
       const settings = await StorageManager.getSettings();
-      
+
       expect(settings).toMatchObject({
         theme: 'system',
         autoSave: true,
@@ -177,9 +177,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
 
     it('should get existing settings from storage', async () => {
       mockChromeStorageSync.get.mockResolvedValue({ settings: mockSettings });
-      
+
       const settings = await StorageManager.getSettings();
-      
+
       expect(settings).toEqual(mockSettings);
     });
 
@@ -196,10 +196,10 @@ describe('StorageManager - Basic CRUD Operations', () => {
         },
       };
       mockChromeStorageSync.get.mockResolvedValue({ settings: currentSettings });
-      
+
       const updates = { theme: 'light' as const };
       const updatedSettings = await StorageManager.saveSettings(updates);
-      
+
       expect(updatedSettings).toEqual({ ...currentSettings, ...updates });
       expect(mockChromeStorageSync.set).toHaveBeenCalledWith({
         settings: { ...currentSettings, ...updates },
@@ -210,9 +210,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
   describe('🟢 Categories and Tags Operations', () => {
     it('should get empty categories array when no categories exist', async () => {
       mockChromeStorageSync.get.mockResolvedValue({});
-      
+
       const categories = await StorageManager.getCategories();
-      
+
       expect(categories).toEqual([]);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(['categories']);
     });
@@ -220,18 +220,18 @@ describe('StorageManager - Basic CRUD Operations', () => {
     it('should get existing categories from storage', async () => {
       const existingCategories = ['cat1', 'cat2'];
       mockChromeStorageSync.get.mockResolvedValue({ categories: existingCategories });
-      
+
       const categories = await StorageManager.getCategories();
-      
+
       expect(categories).toEqual(existingCategories);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(['categories']);
     });
 
     it('should get empty tags array when no tags exist', async () => {
       mockChromeStorageSync.get.mockResolvedValue({});
-      
+
       const tags = await StorageManager.getTags();
-      
+
       expect(tags).toEqual([]);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(['tags']);
     });
@@ -239,9 +239,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
     it('should get existing tags from storage', async () => {
       const existingTags = ['tag1', 'tag2'];
       mockChromeStorageSync.get.mockResolvedValue({ tags: existingTags });
-      
+
       const tags = await StorageManager.getTags();
-      
+
       expect(tags).toEqual(existingTags);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(['tags']);
     });
@@ -256,9 +256,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
         tags: ['test', 'sample'],
       };
       mockChromeStorageSync.get.mockResolvedValue(mockStorageData);
-      
+
       const exportedData = await StorageManager.exportData();
-      
+
       expect(exportedData).toEqual(mockStorageData);
       expect(mockChromeStorageSync.get).toHaveBeenCalledWith(null);
     });
@@ -270,9 +270,9 @@ describe('StorageManager - Basic CRUD Operations', () => {
         categories: ['imported-category'],
         tags: ['imported', 'tags'],
       };
-      
+
       await StorageManager.importData(importData);
-      
+
       expect(mockChromeStorageSync.clear).toHaveBeenCalledTimes(1);
       expect(mockChromeStorageSync.set).toHaveBeenCalledWith(importData);
     });
@@ -285,20 +285,18 @@ describe('StorageManager - Basic CRUD Operations', () => {
         .mockResolvedValue({ prompts: existingPrompts })
         .mockResolvedValue({ categories: [] })
         .mockResolvedValue({ tags: [] });
-      
+
       const promptsToSave = Array.from({ length: 100 }, (_, i) => ({
         title: `Prompt ${i}`,
         content: `Content for prompt ${i}`,
         category: `category-${i % 10}`,
         tags: [`tag-${i}`, `common-tag`],
       }));
-      
-      const savePromises = promptsToSave.map(promptData => 
-        StorageManager.savePrompt(promptData)
-      );
-      
+
+      const savePromises = promptsToSave.map((promptData) => StorageManager.savePrompt(promptData));
+
       const savedPrompts = await Promise.all(savePromises);
-      
+
       expect(savedPrompts).toHaveLength(100);
       savedPrompts.forEach((prompt, index) => {
         expect(prompt.title).toBe(`Prompt ${index}`);
@@ -314,13 +312,13 @@ describe('StorageManager - Basic CRUD Operations', () => {
         id: `prompt-${i}`,
         title: `Prompt ${i}`,
       }));
-      
+
       mockChromeStorageSync.get.mockResolvedValue({ prompts: largePromptArray });
-      
+
       const startTime = performance.now();
       const prompts = await StorageManager.getPrompts();
       const endTime = performance.now();
-      
+
       expect(prompts).toHaveLength(500);
       expect(endTime - startTime).toBeLessThan(1000); // Should complete within 1 second
     });

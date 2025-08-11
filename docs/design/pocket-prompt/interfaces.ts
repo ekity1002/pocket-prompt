@@ -246,7 +246,7 @@ export interface ExportError {
  * エクスポートエラーコード
  * 🟡 黄信号: エラーコードは一般的なエクスポートエラーから推測
  */
-export type ExportErrorCode = 
+export type ExportErrorCode =
   | 'CONVERSATION_NOT_FOUND'
   | 'UNSUPPORTED_FORMAT'
   | 'DATA_TOO_LARGE'
@@ -293,7 +293,7 @@ export interface DOMError {
  * DOM操作エラーコード
  * 🟡 黄信号: DOM操作エラーは一般的なWebスクレイピングエラーから推測
  */
-export type DOMErrorCode = 
+export type DOMErrorCode =
   | 'ELEMENT_NOT_FOUND'
   | 'ACCESS_DENIED'
   | 'READONLY_ELEMENT'
@@ -331,7 +331,7 @@ export interface DateRange {
 /**
  * 検索ソート基準
  */
-export type SearchSortBy = 
+export type SearchSortBy =
   | 'createdAt'
   | 'updatedAt'
   | 'lastUsedAt'
@@ -407,12 +407,7 @@ export interface PaginationInfo {
  * アプリケーションイベント
  * 🟡 黄信号: イベント駆動設計は一般的なChrome拡張パターンから推測
  */
-export type AppEvent = 
-  | PromptEvent
-  | StorageEvent
-  | ExportEvent
-  | SyncEvent
-  | ErrorEvent;
+export type AppEvent = PromptEvent | StorageEvent | ExportEvent | SyncEvent | ErrorEvent;
 
 /**
  * プロンプトイベント
@@ -576,7 +571,7 @@ export interface ChromeMessage {
  */
 export type ChromeMessageType =
   | 'GET_PROMPTS'
-  | 'SAVE_PROMPT' 
+  | 'SAVE_PROMPT'
   | 'COPY_PROMPT'
   | 'EXPORT_CONVERSATION'
   | 'INSERT_TEXT'
@@ -612,11 +607,13 @@ export interface TabInfo {
  * プロンプト型ガード
  */
 export function isPrompt(obj: any): obj is Prompt {
-  return obj && 
+  return (
+    obj &&
     typeof obj.id === 'string' &&
     typeof obj.title === 'string' &&
     typeof obj.content === 'string' &&
-    Array.isArray(obj.tags);
+    Array.isArray(obj.tags)
+  );
 }
 
 /**

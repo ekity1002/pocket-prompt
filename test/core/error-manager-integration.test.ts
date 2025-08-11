@@ -42,15 +42,15 @@ describe('ErrorManager Integration Tests', () => {
       } as any;
 
       const clipboardManager = new ClipboardManager(mockPromptManager);
-      
+
       // Mock clipboard API to fail
       Object.defineProperty(navigator, 'clipboard', {
         writable: true,
         value: undefined,
       });
 
-      const testError = await clipboardManager.copyToClipboard('test text').catch(e => e);
-      
+      const testError = await clipboardManager.copyToClipboard('test text').catch((e) => e);
+
       // Test that ClipboardManager error can be handled by ErrorManager
       const context: ErrorContext = {
         module: 'ClipboardManager',
@@ -82,9 +82,7 @@ describe('ErrorManager Integration Tests', () => {
         { error: new Error('Network Error'), context: { module: 'NetworkManager' } },
       ];
 
-      const promises = errors.map(({ error, context }) => 
-        ErrorManager.logError(error, context)
-      );
+      const promises = errors.map(({ error, context }) => ErrorManager.logError(error, context));
 
       await expect(Promise.all(promises)).resolves.not.toThrow();
       expect(console.error).toHaveBeenCalledTimes(4);
@@ -93,7 +91,7 @@ describe('ErrorManager Integration Tests', () => {
     it('should maintain consistent error format across all modules', async () => {
       // 🟢 Blue: Consistency requirement
       const modules = ['PromptManager', 'ClipboardManager', 'StorageManager', 'ExportManager'];
-      
+
       for (const moduleName of modules) {
         const testError = new Error(`Error in ${moduleName}`);
         const context: ErrorContext = {
@@ -120,11 +118,11 @@ describe('ErrorManager Integration Tests', () => {
     it('should handle error logging without affecting application performance', async () => {
       // 🟡 Yellow: Performance requirement
       const startTime = performance.now();
-      
+
       await ErrorManager.logError(new Error('Performance test'), {
         module: 'PerformanceTest',
       });
-      
+
       const duration = performance.now() - startTime;
       expect(duration).toBeLessThan(50); // Should complete within 50ms
     });
@@ -149,7 +147,7 @@ describe('ErrorManager Integration Tests', () => {
     it('should work correctly in different environments', async () => {
       // 🟡 Yellow: Environment compatibility
       const environments = ['development', 'test', 'production'];
-      
+
       for (const env of environments) {
         const originalEnv = process.env.NODE_ENV;
         process.env.NODE_ENV = env;
@@ -175,13 +173,13 @@ describe('ErrorManager Integration Tests', () => {
     it('should handle storage quota exceeded scenario end-to-end', async () => {
       // 🟢 Blue: Real Chrome extension error scenario
       const quotaError = new DOMException('QuotaExceededError', 'QuotaExceededError');
-      
+
       // Log the technical error
       await ErrorManager.handleStorageError(quotaError);
-      
+
       // Get user-friendly message
       const userError = ErrorManager.handleUserError(quotaError);
-      
+
       // Verify both technical logging and user experience
       expect(console.error).toHaveBeenCalledWith(
         'CHROME_STORAGE_ERROR',
@@ -190,7 +188,7 @@ describe('ErrorManager Integration Tests', () => {
           chromeSpecific: true,
         })
       );
-      
+
       expect(userError.title).toBe('ストレージ容量不足');
       expect(userError.actions).toContainEqual({ label: 'データを整理', action: 'cleanup' });
     });
@@ -199,10 +197,10 @@ describe('ErrorManager Integration Tests', () => {
       // 🟢 Blue: Permission error scenario
       const permissionError = new Error('Permission denied');
       Object.assign(permissionError, { name: 'NotAllowedError' });
-      
+
       await ErrorManager.handlePermissionError(permissionError);
       const userError = ErrorManager.handleUserError(permissionError);
-      
+
       expect(console.error).toHaveBeenCalledWith(
         'CHROME_PERMISSION_ERROR',
         expect.objectContaining({
@@ -210,7 +208,7 @@ describe('ErrorManager Integration Tests', () => {
           chromeSpecific: true,
         })
       );
-      
+
       expect(userError.title).toBe('権限が必要です');
       expect(userError.actions).toContainEqual({ label: '権限設定', action: 'permissions' });
     });
@@ -222,12 +220,12 @@ describe('ErrorManager Integration Tests', () => {
         { error: new DOMException('QuotaExceededError'), expectedAction: 'cleanup' },
         { error: new Error('Permission denied'), expectedAction: 'permissions' },
       ];
-      
+
       for (const { error, expectedAction } of errors) {
         const userError = ErrorManager.handleUserError(error);
-        
+
         expect(userError.actionable).toBe(true);
-        expect(userError.actions.some(action => action.action === expectedAction)).toBe(true);
+        expect(userError.actions.some((action) => action.action === expectedAction)).toBe(true);
       }
     });
   });

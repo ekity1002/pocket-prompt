@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 /**
  * MessageValidator Test Suite
- * 
+ *
  * Tests the message validation functionality including:
  * - Message type validation and structure verification
  * - Security validation (XSS prevention, input sanitization)
@@ -70,8 +70,12 @@ interface MessageValidator {
 // Mock MessageValidator implementation for testing
 class MockMessageValidator implements MessageValidator {
   private readonly VALID_MESSAGE_TYPES = [
-    'PROMPT_CREATE', 'PROMPT_GET', 'PROMPT_UPDATE', 'PROMPT_DELETE',
-    'CLIPBOARD_COPY', 'EXPORT_CONVERSATION'
+    'PROMPT_CREATE',
+    'PROMPT_GET',
+    'PROMPT_UPDATE',
+    'PROMPT_DELETE',
+    'CLIPBOARD_COPY',
+    'EXPORT_CONVERSATION',
   ];
 
   private readonly VALID_SOURCES = ['popup', 'background', 'content'];
@@ -123,7 +127,7 @@ class MockMessageValidator implements MessageValidator {
     return {
       isValid: errors.length === 0,
       errors,
-      sanitizedMessage
+      sanitizedMessage,
     };
   }
 
@@ -192,16 +196,15 @@ class MockMessageValidator implements MessageValidator {
     return (
       typeof payload.id === 'string' &&
       payload.id.length > 0 &&
-      (payload.title === undefined || (typeof payload.title === 'string' && payload.title.length <= this.MAX_TITLE_LENGTH)) &&
-      (payload.content === undefined || (typeof payload.content === 'string' && payload.content.length <= this.MAX_CONTENT_LENGTH))
+      (payload.title === undefined ||
+        (typeof payload.title === 'string' && payload.title.length <= this.MAX_TITLE_LENGTH)) &&
+      (payload.content === undefined ||
+        (typeof payload.content === 'string' && payload.content.length <= this.MAX_CONTENT_LENGTH))
     );
   }
 
   private validatePromptDeletePayload(payload: any): boolean {
-    return (
-      typeof payload.id === 'string' &&
-      payload.id.length > 0
-    );
+    return typeof payload.id === 'string' && payload.id.length > 0;
   }
 
   private validateClipboardPayload(payload: any): boolean {
@@ -214,8 +217,7 @@ class MockMessageValidator implements MessageValidator {
 
   private validateExportPayload(payload: any): boolean {
     return (
-      (payload.format === 'markdown' || payload.format === 'json') &&
-      payload.data !== undefined
+      (payload.format === 'markdown' || payload.format === 'json') && payload.data !== undefined
     );
   }
 
@@ -237,7 +239,7 @@ class MockMessageValidator implements MessageValidator {
       if (typeof value === 'string') {
         sanitized[key] = this.sanitizeString(value);
       } else if (Array.isArray(value)) {
-        sanitized[key] = value.map(item => 
+        sanitized[key] = value.map((item) =>
           typeof item === 'string' ? this.sanitizeString(item) : item
         );
       }
@@ -280,7 +282,7 @@ describe('MessageValidator', () => {
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: { title: 'Test', content: 'Content' }
+        payload: { title: 'Test', content: 'Content' },
       };
 
       // Act
@@ -293,33 +295,62 @@ describe('MessageValidator', () => {
     it('should reject message with missing required fields', () => {
       // Arrange
       const invalidMessages = [
-        { type: 'PROMPT_CREATE', timestamp: Date.now(), source: 'popup', target: 'background', payload: {} }, // missing id
-        { id: 'msg-001', timestamp: Date.now(), source: 'popup', target: 'background', payload: {} }, // missing type
-        { id: 'msg-001', type: 'PROMPT_CREATE', source: 'popup', target: 'background', payload: {} }, // missing timestamp
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: Date.now(), target: 'background', payload: {} }, // missing source
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: Date.now(), source: 'popup', payload: {} }, // missing target
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: Date.now(), source: 'popup', target: 'background' }, // missing payload
+        {
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 'background',
+          payload: {},
+        }, // missing id
+        {
+          id: 'msg-001',
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 'background',
+          payload: {},
+        }, // missing type
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          source: 'popup',
+          target: 'background',
+          payload: {},
+        }, // missing timestamp
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          target: 'background',
+          payload: {},
+        }, // missing source
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: 'popup',
+          payload: {},
+        }, // missing target
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 'background',
+        }, // missing payload
       ];
 
       // Act & Assert
-      invalidMessages.forEach(message => {
+      invalidMessages.forEach((message) => {
         expect(messageValidator.validateMessageStructure(message)).toBe(false);
       });
     });
 
     it('should reject non-object messages', () => {
       // Arrange
-      const invalidMessages = [
-        null,
-        undefined,
-        'string',
-        123,
-        [],
-        true
-      ];
+      const invalidMessages = [null, undefined, 'string', 123, [], true];
 
       // Act & Assert
-      invalidMessages.forEach(message => {
+      invalidMessages.forEach((message) => {
         expect(messageValidator.validateMessageStructure(message)).toBe(false);
       });
     });
@@ -327,16 +358,58 @@ describe('MessageValidator', () => {
     it('should reject messages with incorrect field types', () => {
       // Arrange
       const invalidMessages = [
-        { id: 123, type: 'PROMPT_CREATE', timestamp: Date.now(), source: 'popup', target: 'background', payload: {} },
-        { id: 'msg-001', type: null, timestamp: Date.now(), source: 'popup', target: 'background', payload: {} },
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: 'invalid', source: 'popup', target: 'background', payload: {} },
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: Date.now(), source: null, target: 'background', payload: {} },
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: Date.now(), source: 'popup', target: 123, payload: {} },
-        { id: 'msg-001', type: 'PROMPT_CREATE', timestamp: Date.now(), source: 'popup', target: 'background', payload: null },
+        {
+          id: 123,
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 'background',
+          payload: {},
+        },
+        {
+          id: 'msg-001',
+          type: null,
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 'background',
+          payload: {},
+        },
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: 'invalid',
+          source: 'popup',
+          target: 'background',
+          payload: {},
+        },
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: null,
+          target: 'background',
+          payload: {},
+        },
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 123,
+          payload: {},
+        },
+        {
+          id: 'msg-001',
+          type: 'PROMPT_CREATE',
+          timestamp: Date.now(),
+          source: 'popup',
+          target: 'background',
+          payload: null,
+        },
       ];
 
       // Act & Assert
-      invalidMessages.forEach(message => {
+      invalidMessages.forEach((message) => {
         expect(messageValidator.validateMessageStructure(message)).toBe(false);
       });
     });
@@ -346,12 +419,16 @@ describe('MessageValidator', () => {
     it('should validate supported message types', () => {
       // Arrange
       const validTypes = [
-        'PROMPT_CREATE', 'PROMPT_GET', 'PROMPT_UPDATE', 'PROMPT_DELETE',
-        'CLIPBOARD_COPY', 'EXPORT_CONVERSATION'
+        'PROMPT_CREATE',
+        'PROMPT_GET',
+        'PROMPT_UPDATE',
+        'PROMPT_DELETE',
+        'CLIPBOARD_COPY',
+        'EXPORT_CONVERSATION',
       ];
 
       // Act & Assert
-      validTypes.forEach(type => {
+      validTypes.forEach((type) => {
         expect(messageValidator.validateMessageType(type)).toBe(true);
       });
     });
@@ -359,12 +436,18 @@ describe('MessageValidator', () => {
     it('should reject unsupported message types', () => {
       // Arrange
       const invalidTypes = [
-        'INVALID_TYPE', 'prompt_create', 'PROMPT_INVALID',
-        '', null, undefined, 123, {}
+        'INVALID_TYPE',
+        'prompt_create',
+        'PROMPT_INVALID',
+        '',
+        null,
+        undefined,
+        123,
+        {},
       ];
 
       // Act & Assert
-      invalidTypes.forEach(type => {
+      invalidTypes.forEach((type) => {
         expect(messageValidator.validateMessageType(type)).toBe(false);
       });
     });
@@ -376,7 +459,7 @@ describe('MessageValidator', () => {
       const validSources = ['popup', 'background', 'content'];
 
       // Act & Assert
-      validSources.forEach(source => {
+      validSources.forEach((source) => {
         expect(messageValidator.isValidSource(source)).toBe(true);
       });
     });
@@ -386,7 +469,7 @@ describe('MessageValidator', () => {
       const invalidSources = ['invalid', 'web', 'external', '', null, undefined];
 
       // Act & Assert
-      invalidSources.forEach(source => {
+      invalidSources.forEach((source) => {
         expect(messageValidator.isValidSource(source)).toBe(false);
       });
     });
@@ -396,7 +479,7 @@ describe('MessageValidator', () => {
       const validTargets = ['popup', 'background', 'content'];
 
       // Act & Assert
-      validTargets.forEach(target => {
+      validTargets.forEach((target) => {
         expect(messageValidator.isValidTarget(target)).toBe(true);
       });
     });
@@ -406,7 +489,7 @@ describe('MessageValidator', () => {
       const invalidTargets = ['invalid', 'web', 'external', '', null, undefined];
 
       // Act & Assert
-      invalidTargets.forEach(target => {
+      invalidTargets.forEach((target) => {
         expect(messageValidator.isValidTarget(target)).toBe(false);
       });
     });
@@ -421,7 +504,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      validPayloads.forEach(payload => {
+      validPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('PROMPT_CREATE', payload)).toBe(true);
       });
     });
@@ -440,7 +523,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      invalidPayloads.forEach(payload => {
+      invalidPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('PROMPT_CREATE', payload)).toBe(false);
       });
     });
@@ -455,7 +538,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      validPayloads.forEach(payload => {
+      validPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('PROMPT_GET', payload)).toBe(true);
       });
     });
@@ -469,7 +552,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      validPayloads.forEach(payload => {
+      validPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('PROMPT_UPDATE', payload)).toBe(true);
       });
     });
@@ -484,7 +567,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      invalidPayloads.forEach(payload => {
+      invalidPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('PROMPT_UPDATE', payload)).toBe(false);
       });
     });
@@ -509,7 +592,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      invalidPayloads.forEach(payload => {
+      invalidPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('PROMPT_DELETE', payload)).toBe(false);
       });
     });
@@ -518,13 +601,10 @@ describe('MessageValidator', () => {
   describe('Payload Validation - Other Message Types', () => {
     it('should validate CLIPBOARD_COPY payload', () => {
       // Arrange
-      const validPayloads = [
-        { text: 'Text to copy' },
-        { text: 'Multi\nline\ntext' },
-      ];
+      const validPayloads = [{ text: 'Text to copy' }, { text: 'Multi\nline\ntext' }];
 
       // Act & Assert
-      validPayloads.forEach(payload => {
+      validPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('CLIPBOARD_COPY', payload)).toBe(true);
       });
     });
@@ -539,7 +619,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      invalidPayloads.forEach(payload => {
+      invalidPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('CLIPBOARD_COPY', payload)).toBe(false);
       });
     });
@@ -553,7 +633,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      validPayloads.forEach(payload => {
+      validPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('EXPORT_CONVERSATION', payload)).toBe(true);
       });
     });
@@ -567,7 +647,7 @@ describe('MessageValidator', () => {
       ];
 
       // Act & Assert
-      invalidPayloads.forEach(payload => {
+      invalidPayloads.forEach((payload) => {
         expect(messageValidator.validatePayload('EXPORT_CONVERSATION', payload)).toBe(false);
       });
     });
@@ -583,7 +663,7 @@ describe('MessageValidator', () => {
           timestamp: Date.now(),
           source: 'popup',
           target: 'background',
-          payload: { title: 'Test', content: 'Content' }
+          payload: { title: 'Test', content: 'Content' },
         },
         {
           id: 'msg-002',
@@ -591,12 +671,12 @@ describe('MessageValidator', () => {
           timestamp: Date.now(),
           source: 'popup',
           target: 'background',
-          payload: { text: 'Copy this' }
-        }
+          payload: { text: 'Copy this' },
+        },
       ];
 
       // Act & Assert
-      validMessages.forEach(message => {
+      validMessages.forEach((message) => {
         const result = messageValidator.validateMessage(message);
         expect(result.isValid).toBe(true);
         expect(result.errors).toHaveLength(0);
@@ -612,7 +692,7 @@ describe('MessageValidator', () => {
         timestamp: Date.now(),
         source: 'invalid_source',
         target: 'background',
-        payload: { invalid: 'payload' }
+        payload: { invalid: 'payload' },
       };
 
       // Act
@@ -637,8 +717,8 @@ describe('MessageValidator', () => {
         payload: {
           title: 'Safe Title<script>alert("xss")</script>',
           content: 'Content with javascript:alert("xss") link',
-          tags: ['tag<script>alert("xss")</script>', 'safe-tag']
-        }
+          tags: ['tag<script>alert("xss")</script>', 'safe-tag'],
+        },
       } as Message;
 
       // Act
@@ -660,8 +740,8 @@ describe('MessageValidator', () => {
         source: 'popup',
         target: 'background',
         payload: {
-          text: 'Click here: <div onclick="malicious()">content</div>'
-        }
+          text: 'Click here: <div onclick="malicious()">content</div>',
+        },
       } as Message;
 
       // Act
@@ -682,8 +762,8 @@ describe('MessageValidator', () => {
         payload: {
           title: 'Safe Title',
           content: 'Safe content with normal text',
-          tags: ['work', 'important']
-        }
+          tags: ['work', 'important'],
+        },
       } as Message;
 
       // Act
@@ -707,8 +787,8 @@ describe('MessageValidator', () => {
         target: 'background',
         payload: {
           title: 'x'.repeat(500),
-          content: 'x'.repeat(20000)
-        }
+          content: 'x'.repeat(20000),
+        },
       };
 
       // Act
@@ -730,8 +810,8 @@ describe('MessageValidator', () => {
         payload: {
           id: 'prompt-123',
           title: null,
-          content: undefined
-        }
+          content: undefined,
+        },
       };
 
       // Act
@@ -745,21 +825,19 @@ describe('MessageValidator', () => {
       // Arrange
       const circularObj: any = { id: 'prompt-123' };
       circularObj.self = circularObj;
-      
+
       const messageWithCircular = {
         id: 'msg-009',
         type: 'PROMPT_UPDATE',
         timestamp: Date.now(),
         source: 'popup',
         target: 'background',
-        payload: circularObj
+        payload: circularObj,
       };
 
       // Act & Assert
       // This should not crash the validator
-      expect(() => messageValidator.validateMessage(messageWithCircular))
-        .not
-        .toThrow();
+      expect(() => messageValidator.validateMessage(messageWithCircular)).not.toThrow();
     });
   });
 });
