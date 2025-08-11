@@ -14,4 +14,13 @@ gitフローで開発を行う.
   - PostCSS + Autoprefixer統合
 - リント・フォーマット: Biome.js
 - Chrome Extension: Manifest V3準拠
+- テストフレームワーク: Vitest
+
+■プロジェクト構造
+- src/: ソースコード
+- test/: テストファイル (Vitest)
+  - test/core/: コア機能のテスト
+  - test/types/: 型定義のテスト
+- docs/: 設計・仕様書
+- dist/: ビルド出力
 

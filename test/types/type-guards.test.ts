@@ -30,7 +30,7 @@ import {
   type ConversationData,
   type ConversationMessage,
   type CreatePromptRequest,
-} from '../index';
+} from '../../src/types';
 
 describe('Type Guards', () => {
   describe('isPrompt', () => {

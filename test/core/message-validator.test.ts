@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { ChromeMessage, ChromeMessageType } from '@/types';
-import { MessageValidator, type ValidationResult } from '../message-validator';
+import type { ChromeMessage, ChromeMessageType } from '../../src/types';
+import { MessageValidator, type ValidationResult } from '../../src/core/message-validator';
 
 // Test utilities
 const generateRequestId = () => `req-${Date.now()}-${Math.random()}`;

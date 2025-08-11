@@ -7,8 +7,8 @@ import type {
   SavePromptRequest,
   GetPageInfoRequest,
   InsertTextRequest,
-} from '@/types';
-import { MessageRouter, type MessageHandler } from '../message-router';
+} from '../../src/types';
+import { MessageRouter, type MessageHandler } from '../../src/core/message-router';
 
 // Mock Chrome APIs
 const mockChrome = {

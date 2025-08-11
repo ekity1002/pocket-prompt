@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { ChromeResponse, ChromeMessageType } from '@/types';
-import { AsyncResponseManager } from '../async-response-manager';
+import type { ChromeResponse, ChromeMessageType } from '../../src/types';
+import { AsyncResponseManager } from '../../src/core/async-response-manager';
 
 // Test utilities
 const generateRequestId = () => `req-${Date.now()}-${Math.random()}`;
