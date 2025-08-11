@@ -1,6 +1,8 @@
 // Popup script for Pocket-Prompt Chrome Extension
 
 import type { ChromeMessage, ChromeResponse } from '@/types';
+import { CopyButton } from '../components/ui/CopyButton';
+import { toast } from '../components/ui/ToastNotification';
 
 console.log('Pocket-Prompt Popup loaded');
 
@@ -8,6 +10,9 @@ console.log('Pocket-Prompt Popup loaded');
 const settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
 const promptList = document.getElementById('promptList') as HTMLDivElement;
 const addPromptBtn = document.getElementById('addPromptBtn') as HTMLButtonElement;
+
+// Copy button instances management
+const copyButtons = new Map<string, CopyButton>();
 
 // Event listeners
 settingsBtn.addEventListener('click', openSettings);
@@ -28,6 +33,9 @@ async function initializePopup(): Promise<void> {
 }
 
 async function loadPrompts(): Promise<void> {
+  // Show loading state
+  showLoadingState();
+
   const message: ChromeMessage = {
     type: 'GET_PROMPTS',
     requestId: generateRequestId(),
@@ -39,7 +47,13 @@ async function loadPrompts(): Promise<void> {
 
     if (response.success && response.data) {
       const { prompts, totalCount } = response.data as {
-        prompts: Array<{ id: string; title: string; content: string }>;
+        prompts: Array<{ 
+          id: string; 
+          title: string; 
+          content: string;
+          usageCount?: number;
+          lastUsedAt?: string;
+        }>;
         totalCount: number;
       };
       renderPrompts(prompts, totalCount);
@@ -53,9 +67,18 @@ async function loadPrompts(): Promise<void> {
 }
 
 function renderPrompts(
-  prompts: Array<{ id: string; title: string; content: string }>,
+  prompts: Array<{ 
+    id: string; 
+    title: string; 
+    content: string;
+    usageCount?: number;
+    lastUsedAt?: string;
+  }>,
   totalCount: number
 ): void {
+  // Clear existing copy buttons
+  clearCopyButtons();
+
   if (totalCount === 0) {
     promptList.innerHTML = `
       <div class="empty-state">
@@ -69,9 +92,15 @@ function renderPrompts(
   const promptsHtml = prompts
     .map(
       (prompt) => `
-        <div class="prompt-item" data-id="${prompt.id}">
+        <div class="prompt-item" data-id="${prompt.id}" tabindex="0" role="button" aria-label="プロンプト: ${escapeHtml(prompt.title)}">
           <div class="prompt-title">${escapeHtml(prompt.title)}</div>
-          <div class="prompt-preview">${escapeHtml(prompt.content.substring(0, 50))}...</div>
+          <div class="prompt-preview">${escapeHtml(prompt.content.substring(0, 80))}...</div>
+          ${prompt.usageCount !== undefined || prompt.lastUsedAt ? `
+            <div class="prompt-meta">
+              ${prompt.usageCount !== undefined ? `<span>使用回数: ${prompt.usageCount}</span>` : ''}
+              ${prompt.lastUsedAt ? `<span>最終使用: ${formatLastUsed(prompt.lastUsedAt)}</span>` : ''}
+            </div>
+          ` : ''}
         </div>
       `
     )
@@ -79,16 +108,8 @@ function renderPrompts(
 
   promptList.innerHTML = promptsHtml;
 
-  // Add click listeners to prompt items
-  const promptItems = promptList.querySelectorAll('.prompt-item');
-  for (const item of promptItems) {
-    item.addEventListener('click', () => {
-      const promptId = item.getAttribute('data-id');
-      if (promptId) {
-        copyPrompt(promptId);
-      }
-    });
-  }
+  // Setup copy buttons and event listeners
+  setupPromptInteractions(prompts);
 }
 
 async function copyPrompt(promptId: string): Promise<void> {
@@ -103,15 +124,19 @@ async function copyPrompt(promptId: string): Promise<void> {
     const response = await sendMessageToBackground(message);
 
     if (response.success) {
-      showSuccess('プロンプトをコピーしました');
+      toast.success('プロンプトをコピーしました');
       // Update usage statistics
       await loadPrompts();
     } else {
-      showError(response.error?.message || 'コピーに失敗しました');
+      const errorMessage = response.error?.message || 'コピーに失敗しました';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
     }
   } catch (error) {
     console.error('Failed to copy prompt:', error);
-    showError('コピーに失敗しました');
+    const errorMessage = error instanceof Error ? error.message : 'コピーに失敗しました';
+    toast.error(errorMessage);
+    throw error;
   }
 }
 
@@ -157,12 +182,95 @@ function escapeHtml(unsafe: string): string {
   return unsafe.replace(/[&<>"']/g, (char) => replacements[char as keyof typeof replacements]);
 }
 
+function setupPromptInteractions(prompts: Array<{ id: string; title: string; content: string }>): void {
+  const promptItems = promptList.querySelectorAll('.prompt-item');
+  
+  for (const item of promptItems) {
+    const promptId = item.getAttribute('data-id');
+    if (!promptId) continue;
+
+    // Create copy button for each prompt item
+    const copyButton = new CopyButton({
+      promptId,
+      onCopy: copyPrompt,
+      variant: 'default'
+    });
+
+    // Store reference for cleanup
+    copyButtons.set(promptId, copyButton);
+
+    // Append copy button to prompt item
+    item.appendChild(copyButton.getElement());
+
+    // Add keyboard navigation support
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        copyPrompt(promptId);
+      }
+    });
+
+    // Remove click event from prompt item to avoid conflicts
+    item.addEventListener('click', (e) => {
+      // Only trigger copy if not clicking on the copy button
+      if (!e.target || !(e.target as Element).closest('.copy-button')) {
+        copyPrompt(promptId);
+      }
+    });
+  }
+}
+
+function clearCopyButtons(): void {
+  // Clean up existing copy button instances
+  for (const copyButton of copyButtons.values()) {
+    copyButton.destroy();
+  }
+  copyButtons.clear();
+}
+
+function showLoadingState(): void {
+  promptList.innerHTML = `
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <p>プロンプトを読み込んでいます...</p>
+    </div>
+  `;
+}
+
+function formatLastUsed(lastUsedAt: string): string {
+  try {
+    const date = new Date(lastUsedAt);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffMinutes < 1) return '今';
+    if (diffMinutes < 60) return `${diffMinutes}分前`;
+    if (diffHours < 24) return `${diffHours}時間前`;
+    if (diffDays < 7) return `${diffDays}日前`;
+    
+    return date.toLocaleDateString('ja-JP', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (error) {
+    return '---';
+  }
+}
+
 function showSuccess(message: string): void {
   console.log('Success:', message);
-  // TODO: Show toast notification
+  toast.success(message);
 }
 
 function showError(message: string): void {
   console.error('Error:', message);
-  // TODO: Show error notification
+  toast.error(message);
 }
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+  clearCopyButtons();
+});

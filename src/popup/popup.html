@@ -49,7 +49,8 @@
     }
     
     .prompt-item {
-      padding: 12px;
+      position: relative;
+      padding: 12px 48px 12px 12px;
       margin-bottom: 8px;
       background: white;
       border: 1px solid #e0e0e0;
@@ -63,10 +64,17 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
     
+    .prompt-item:focus {
+      outline: none;
+      border-color: #1976d2;
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+    }
+    
     .prompt-title {
       font-weight: 500;
       margin-bottom: 4px;
       color: #333;
+      padding-right: 8px;
     }
     
     .prompt-preview {
@@ -75,6 +83,15 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-right: 8px;
+    }
+
+    .prompt-meta {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+      display: flex;
+      gap: 12px;
     }
     
     .empty-state {
@@ -98,6 +115,237 @@
     
     .add-prompt-btn:hover {
       background: #1565c0;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #1976d2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Copy Button Styles */
+    .copy-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .copy-button:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .copy-button:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3), 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-button--copying {
+      background: rgba(33, 150, 243, 0.1);
+      color: #2196f3;
+    }
+
+    .copy-button--success {
+      background: rgba(76, 175, 80, 0.1);
+      color: #4caf50;
+    }
+
+    .copy-button--error {
+      background: rgba(244, 67, 54, 0.1);
+      color: #f44336;
+    }
+
+    .copy-icon--loading {
+      animation: spin 1s linear infinite;
+    }
+
+    .copy-icon--success,
+    .copy-icon--error {
+      animation: pulse 0.3s ease-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Toast Notification Styles */
+    .toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 9999;
+      max-width: 300px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      position: relative;
+      margin-bottom: 12px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(100%);
+      transition: all 0.3s ease-in-out;
+      pointer-events: auto;
+      min-width: 250px;
+    }
+
+    .toast-item--visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .toast-item--exiting {
+      opacity: 0;
+      transform: translateX(100%);
+      margin-bottom: 0;
+      max-height: 0;
+    }
+
+    .toast-content {
+      display: flex;
+      align-items: flex-start;
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .toast-icon {
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      margin-top: 2px;
+    }
+
+    .toast-message {
+      flex: 1;
+      font-size: 13px;
+      line-height: 1.4;
+      color: #333;
+      word-wrap: break-word;
+    }
+
+    .toast-close {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      transition: all 0.2s ease;
+    }
+
+    .toast-close:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: #333;
+    }
+
+    .toast-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: rgba(0, 0, 0, 0.1);
+    }
+
+    .toast-progress-bar {
+      height: 100%;
+      background: currentColor;
+      transform-origin: left;
+      animation: toastProgress linear forwards;
+    }
+
+    @keyframes toastProgress {
+      from { transform: scaleX(1); }
+      to { transform: scaleX(0); }
+    }
+
+    .toast-item--success {
+      border-left: 3px solid #4caf50;
+    }
+
+    .toast-item--success .toast-icon {
+      color: #4caf50;
+    }
+
+    .toast-item--error {
+      border-left: 3px solid #f44336;
+    }
+
+    .toast-item--error .toast-icon {
+      color: #f44336;
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      .copy-button,
+      .copy-icon--loading,
+      .copy-icon--success,
+      .copy-icon--error,
+      .toast-item,
+      .toast-progress-bar {
+        animation: none !important;
+        transition: none !important;
+      }
+
+      .copy-button:hover:not(:disabled) {
+        transform: none;
+      }
+    }
+
+    /* High contrast mode */
+    @media (prefers-contrast: high) {
+      .copy-button,
+      .toast-item {
+        border: 2px solid currentColor;
+      }
     }
   </style>
 </head>
