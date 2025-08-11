@@ -142,6 +142,28 @@ export interface ApiError {
   details?: unknown;
 }
 
+// Clipboard API interfaces
+export interface ClipboardResult {
+  success: boolean;
+  error?: string;
+  timestamp: Date;
+  metrics?: ClipboardMetrics;
+  debugInfo?: ClipboardDebugInfo;
+}
+
+export interface ClipboardMetrics {
+  duration: number;
+  textLength: number;
+  retryCount: number;
+}
+
+export interface ClipboardDebugInfo {
+  originalError?: Error;
+  userAgent: string;
+  clipboardApiSupported: boolean;
+  permissionsGranted: boolean;
+}
+
 // Storage interfaces
 export interface StorageData {
   prompts: Prompt[];
