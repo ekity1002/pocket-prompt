@@ -123,9 +123,17 @@ export type ChromeMessageType =
   | 'SAVE_PROMPT'
   | 'COPY_PROMPT'
   | 'EXPORT_CONVERSATION'
+  | 'SAVE_CONVERSATION'
+  | 'GET_CONVERSATIONS'
+  | 'UPDATE_CONVERSATION'
+  | 'DELETE_CONVERSATION'
+  | 'GET_CONVERSATION_DATA'
+  | 'GET_STORAGE_STATS'
+  | 'BULK_OPERATIONS'
   | 'INSERT_TEXT'
   | 'GET_PAGE_INFO'
   | 'SYNC_DATA'
+  | 'BACKGROUND_EVENT'
   | 'ERROR_REPORT';
 
 export interface ChromeResponse<T = unknown> {
