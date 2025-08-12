@@ -1,12 +1,16 @@
 // Core business logic for export functionality
 // Handles conversation export from various AI sites
+// TASK-0019: Enhanced with export history management
 
+import { ExportHistoryManager } from './export-history-manager';
 import type {
   ConversationExport,
   ConversationData,
   ExportFormat,
   ExportOptions,
   SupportedAISite,
+  ExportHistoryEntry,
+  ExportStatistics,
 } from '@/types';
 
 /**
@@ -15,13 +19,16 @@ import type {
  */
 export class ExportManager {
   private storage: any;
+  private historyManager: ExportHistoryManager;
 
   constructor(storageAdapter: any) {
     this.storage = storageAdapter;
+    this.historyManager = new ExportHistoryManager(storageAdapter);
   }
 
   /**
    * Export conversation from current AI site
+   * TASK-0019: Enhanced with duplicate check and history management
    */
   async exportConversation(
     site: SupportedAISite,
@@ -36,25 +43,35 @@ export class ExportManager {
     // Extract conversation data
     const conversationData = await extractor.extractConversation();
 
+    // Check for duplicate export
+    const url = options.url || (typeof window !== 'undefined' ? window.location.href : '');
+    const isDuplicate = await this.historyManager.checkDuplicate(url, site, conversationData.title);
+
+    if (isDuplicate && !options.forceDuplicate) {
+      console.warn('Duplicate export detected:', { url, site, title: conversationData.title });
+    }
+
     // Format the export
     const exportData: ConversationExport = {
       id: this.generateExportId(),
       site,
       title: conversationData.title || `${site} Conversation`,
-      url: window.location.href,
+      url,
       exportedAt: new Date().toISOString(),
       format: options.format,
       data: conversationData,
       metadata: {
         messageCount: conversationData.messages.length,
         exportVersion: '1.0.0',
-        userAgent: navigator.userAgent,
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown',
       },
     };
 
     // Save to storage if requested
     if (options.saveToStorage) {
       await this.storage.saveExport(exportData);
+      // TASK-0019: Save to history
+      await this.historyManager.saveToHistory(exportData);
     }
 
     return exportData;
@@ -79,17 +96,11 @@ export class ExportManager {
   }
 
   /**
-   * Get export history
-   */
-  async getExportHistory(limit = 50): Promise<ConversationExport[]> {
-    return await this.storage.getExports(limit);
-  }
-
-  /**
    * Delete export from history
+   * @deprecated Use removeExportFromHistory instead
    */
   async deleteExport(exportId: string): Promise<void> {
-    await this.storage.deleteExport(exportId);
+    await this.removeExportFromHistory(exportId);
   }
 
   /**
@@ -201,6 +212,54 @@ export class ExportManager {
     });
 
     return csv;
+  }
+
+  /**
+   * Get export history
+   * TASK-0019: Delegate to history manager
+   */
+  async getExportHistory(limit = 50): Promise<ExportHistoryEntry[]> {
+    return await this.historyManager.getHistory(limit);
+  }
+
+  /**
+   * Get export statistics
+   * TASK-0019: Delegate to history manager
+   */
+  async getExportStatistics(): Promise<ExportStatistics> {
+    return await this.historyManager.getStatistics();
+  }
+
+  /**
+   * Check for duplicate export
+   * TASK-0019: Delegate to history manager
+   */
+  async checkDuplicateExport(url: string, site: SupportedAISite, title: string): Promise<boolean> {
+    return await this.historyManager.checkDuplicate(url, site, title);
+  }
+
+  /**
+   * Remove export from history
+   * TASK-0019: Delegate to history manager
+   */
+  async removeExportFromHistory(exportId: string): Promise<void> {
+    await this.historyManager.removeFromHistory(exportId);
+  }
+
+  /**
+   * Get export for re-download
+   * TASK-0019: Delegate to history manager
+   */
+  async getExportForRedownload(exportId: string): Promise<ConversationExport> {
+    return await this.historyManager.getExportForRedownload(exportId);
+  }
+
+  /**
+   * Cleanup old exports
+   * TASK-0019: Delegate to history manager
+   */
+  async cleanupOldExports(retentionDays: number = 30): Promise<void> {
+    await this.historyManager.cleanupOldHistory(retentionDays);
   }
 
   /**
