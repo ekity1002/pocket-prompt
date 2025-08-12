@@ -47,9 +47,9 @@ async function loadPrompts(): Promise<void> {
 
     if (response.success && response.data) {
       const { prompts, totalCount } = response.data as {
-        prompts: Array<{ 
-          id: string; 
-          title: string; 
+        prompts: Array<{
+          id: string;
+          title: string;
           content: string;
           usageCount?: number;
           lastUsedAt?: string;
@@ -67,9 +67,9 @@ async function loadPrompts(): Promise<void> {
 }
 
 function renderPrompts(
-  prompts: Array<{ 
-    id: string; 
-    title: string; 
+  prompts: Array<{
+    id: string;
+    title: string;
     content: string;
     usageCount?: number;
     lastUsedAt?: string;
@@ -95,12 +95,16 @@ function renderPrompts(
         <div class="prompt-item" data-id="${prompt.id}" tabindex="0" role="button" aria-label="プロンプト: ${escapeHtml(prompt.title)}">
           <div class="prompt-title">${escapeHtml(prompt.title)}</div>
           <div class="prompt-preview">${escapeHtml(prompt.content.substring(0, 80))}...</div>
-          ${prompt.usageCount !== undefined || prompt.lastUsedAt ? `
+          ${
+            prompt.usageCount !== undefined || prompt.lastUsedAt
+              ? `
             <div class="prompt-meta">
               ${prompt.usageCount !== undefined ? `<span>使用回数: ${prompt.usageCount}</span>` : ''}
               ${prompt.lastUsedAt ? `<span>最終使用: ${formatLastUsed(prompt.lastUsedAt)}</span>` : ''}
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       `
     )
@@ -182,9 +186,11 @@ function escapeHtml(unsafe: string): string {
   return unsafe.replace(/[&<>"']/g, (char) => replacements[char as keyof typeof replacements]);
 }
 
-function setupPromptInteractions(prompts: Array<{ id: string; title: string; content: string }>): void {
+function setupPromptInteractions(
+  prompts: Array<{ id: string; title: string; content: string }>
+): void {
   const promptItems = promptList.querySelectorAll('.prompt-item');
-  
+
   for (const item of promptItems) {
     const promptId = item.getAttribute('data-id');
     if (!promptId) continue;
@@ -193,7 +199,7 @@ function setupPromptInteractions(prompts: Array<{ id: string; title: string; con
     const copyButton = new CopyButton({
       promptId,
       onCopy: copyPrompt,
-      variant: 'default'
+      variant: 'default',
     });
 
     // Store reference for cleanup
@@ -250,10 +256,10 @@ function formatLastUsed(lastUsedAt: string): string {
     if (diffMinutes < 60) return `${diffMinutes}分前`;
     if (diffHours < 24) return `${diffHours}時間前`;
     if (diffDays < 7) return `${diffDays}日前`;
-    
-    return date.toLocaleDateString('ja-JP', { 
-      month: 'short', 
-      day: 'numeric' 
+
+    return date.toLocaleDateString('ja-JP', {
+      month: 'short',
+      day: 'numeric',
     });
   } catch (error) {
     return '---';

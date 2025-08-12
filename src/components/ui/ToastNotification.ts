@@ -33,7 +33,7 @@ export class ToastManager {
     container.setAttribute('role', 'status');
     container.setAttribute('aria-live', 'polite');
     container.setAttribute('aria-atomic', 'true');
-    
+
     return container;
   }
 
@@ -50,11 +50,7 @@ export class ToastManager {
   }
 
   public show(message: string, options: ToastOptions = {}): string {
-    const {
-      type = 'info',
-      duration = 4000,
-      persistent = false
-    } = options;
+    const { type = 'info', duration = 4000, persistent = false } = options;
 
     const id = this.generateId();
     const notification: ToastNotification = {
@@ -90,11 +86,11 @@ export class ToastManager {
     if (element) {
       // Add exit animation
       element.classList.add('toast-item--exiting');
-      
+
       setTimeout(() => {
         element.remove();
         this.notifications.delete(id);
-        
+
         const timeout = this.timeouts.get(id);
         if (timeout) {
           clearTimeout(timeout);
@@ -212,8 +208,9 @@ export class ToastManager {
   }
 
   private enforceMaxNotifications(): void {
-    const notificationArray = Array.from(this.notifications.values())
-      .sort((a, b) => a.timestamp - b.timestamp);
+    const notificationArray = Array.from(this.notifications.values()).sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
 
     while (notificationArray.length > this.maxNotifications) {
       const oldest = notificationArray.shift();
@@ -270,20 +267,18 @@ export class ToastManager {
 
 // Convenience functions for global use
 export const toast = {
-  success: (message: string, duration?: number) => 
+  success: (message: string, duration?: number) =>
     ToastManager.getInstance().showSuccess(message, duration),
-    
-  error: (message: string, duration?: number) => 
+
+  error: (message: string, duration?: number) =>
     ToastManager.getInstance().showError(message, duration),
-    
-  info: (message: string, duration?: number) => 
+
+  info: (message: string, duration?: number) =>
     ToastManager.getInstance().showInfo(message, duration),
-    
-  dismiss: (id: string) => 
-    ToastManager.getInstance().dismiss(id),
-    
-  dismissAll: () => 
-    ToastManager.getInstance().dismissAll(),
+
+  dismiss: (id: string) => ToastManager.getInstance().dismiss(id),
+
+  dismissAll: () => ToastManager.getInstance().dismissAll(),
 };
 
 // CSS-in-JS helper for dynamic styles

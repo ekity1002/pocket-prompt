@@ -12,7 +12,7 @@ const currentSite = detectAISite();
 if (currentSite === 'chatgpt') {
   console.log('Initializing ChatGPT Content Script');
   // Import and initialize ChatGPT-specific content script
-  import('./chatgpt-content-script').catch(error => {
+  import('./chatgpt-content-script').catch((error) => {
     console.error('Failed to load ChatGPT content script:', error);
   });
 } else if (currentSite) {
@@ -26,8 +26,10 @@ function detectAISite(): SupportedAISite | null {
   const hostname = window.location.hostname;
 
   // ChatGPT detection with comprehensive checks
-  if (hostname === 'chat.openai.com' || 
-      (hostname.includes('openai.com') && window.location.pathname.includes('chat'))) {
+  if (
+    hostname === 'chat.openai.com' ||
+    (hostname.includes('openai.com') && window.location.pathname.includes('chat'))
+  ) {
     return 'chatgpt';
   }
 
@@ -135,7 +137,7 @@ async function insertTextBasic(text: string): Promise<boolean> {
     ];
 
     let inputElement: HTMLElement | null = null;
-    
+
     for (const selector of selectors) {
       inputElement = document.querySelector(selector);
       if (inputElement) break;

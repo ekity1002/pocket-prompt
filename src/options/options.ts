@@ -69,7 +69,7 @@ function updateUIFromSettings(settings: Settings): void {
   exportFormatSelect.value = settings.exportFormat;
   captureShortcutInput.value = settings.shortcuts.capture;
   toggleShortcutInput.value = settings.shortcuts.toggle;
-  
+
   // Set default language to Japanese if not specified
   languageSelect.value = 'ja'; // Static for now, can be extended later
   searchFilteringToggle.checked = true; // Default enabled
@@ -80,17 +80,17 @@ function setupEventListeners(): void {
   // Basic settings
   themeSelect.addEventListener('change', handleSettingsChange);
   languageSelect.addEventListener('change', handleSettingsChange);
-  
+
   // Feature toggles
   autoSaveToggle.addEventListener('change', handleSettingsChange);
   searchFilteringToggle.addEventListener('change', handleSettingsChange);
   aiSiteIntegrationToggle.addEventListener('change', handleSettingsChange);
   syncEnabledToggle.addEventListener('change', handleSettingsChange);
   autoTagToggle.addEventListener('change', handleSettingsChange);
-  
+
   // Export settings
   exportFormatSelect.addEventListener('change', handleSettingsChange);
-  
+
   // Data management buttons
   exportSettingsBtn.addEventListener('click', handleExportSettings);
   importSettingsBtn.addEventListener('click', handleImportSettings);
@@ -126,7 +126,7 @@ async function saveSettings(): Promise<void> {
   try {
     await chrome.storage.local.set({ settings: currentSettings });
     console.log('Settings saved:', currentSettings);
-    
+
     // Apply theme change immediately
     applyTheme(currentSettings.theme);
   } catch (error) {
@@ -140,7 +140,7 @@ function applyTheme(theme: Settings['theme']): void {
   const body = document.body;
   body.classList.remove('theme-light', 'theme-dark', 'theme-auto', 'theme-system');
   body.classList.add(`theme-${theme}`);
-  
+
   // For 'auto' and 'system', detect system preference
   if (theme === 'auto' || theme === 'system') {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -152,13 +152,13 @@ function applyTheme(theme: Settings['theme']): void {
 async function handleExportSettings(): Promise<void> {
   try {
     showStatus('Exporting settings...', 'info');
-    
+
     const exportData = {
       settings: currentSettings,
       exportedAt: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.0.0',
     };
-    
+
     downloadJSON(exportData, `pocket-prompt-settings-${Date.now()}.json`);
     showStatus('Settings exported successfully', 'success');
   } catch (error) {
@@ -172,7 +172,7 @@ async function handleImportSettings(): Promise<void> {
     const file = await selectFile('.json');
     const content = await readFileAsText(file);
     const importData = JSON.parse(content);
-    
+
     if (importData.settings && isValidSettings(importData.settings)) {
       currentSettings = importData.settings;
       updateUIFromSettings(currentSettings);
@@ -190,14 +190,14 @@ async function handleImportSettings(): Promise<void> {
 async function handleExportData(): Promise<void> {
   try {
     showStatus('Exporting all data...', 'info');
-    
+
     const result = await chrome.storage.local.get(null);
     const exportData = {
       ...result,
       exportedAt: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.0.0',
     };
-    
+
     downloadJSON(exportData, `pocket-prompt-data-${Date.now()}.json`);
     showStatus('All data exported successfully', 'success');
   } catch (error) {
@@ -208,20 +208,22 @@ async function handleExportData(): Promise<void> {
 
 async function handleImportData(): Promise<void> {
   try {
-    const confirmed = confirm('This will replace all existing data. Are you sure you want to continue?');
+    const confirmed = confirm(
+      'This will replace all existing data. Are you sure you want to continue?'
+    );
     if (!confirmed) return;
-    
+
     const file = await selectFile('.json');
     const content = await readFileAsText(file);
     const importData = JSON.parse(content);
-    
+
     // Clear existing data
     await chrome.storage.local.clear();
-    
+
     // Import new data (excluding metadata)
     const { exportedAt, version, ...dataToImport } = importData;
     await chrome.storage.local.set(dataToImport);
-    
+
     // Reload settings
     await loadSettings();
     showStatus('All data imported successfully', 'success');
@@ -235,7 +237,7 @@ async function handleResetSettings(): Promise<void> {
   try {
     const confirmed = confirm('This will reset all settings to defaults. Are you sure?');
     if (!confirmed) return;
-    
+
     currentSettings = getDefaultSettings();
     updateUIFromSettings(currentSettings);
     await saveSettings();
@@ -262,7 +264,8 @@ function getDefaultSettings(): Settings {
 }
 
 function isValidSettings(obj: any): obj is Settings {
-  return obj &&
+  return (
+    obj &&
     typeof obj.theme === 'string' &&
     typeof obj.autoSave === 'boolean' &&
     typeof obj.syncEnabled === 'boolean' &&
@@ -270,13 +273,14 @@ function isValidSettings(obj: any): obj is Settings {
     typeof obj.exportFormat === 'string' &&
     obj.shortcuts &&
     typeof obj.shortcuts.capture === 'string' &&
-    typeof obj.shortcuts.toggle === 'string';
+    typeof obj.shortcuts.toggle === 'string'
+  );
 }
 
 function showStatus(message: string, type: 'success' | 'error' | 'info'): void {
   statusMessage.textContent = message;
   statusMessage.className = `status-message ${type}`;
-  
+
   // Auto-hide success and info messages
   if (type === 'success' || type === 'info') {
     setTimeout(() => {
@@ -291,7 +295,7 @@ function selectFile(accept: string): Promise<File> {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = accept;
-    
+
     input.onchange = () => {
       const file = input.files?.[0];
       if (file) {
@@ -300,7 +304,7 @@ function selectFile(accept: string): Promise<File> {
         reject(new Error('No file selected'));
       }
     };
-    
+
     input.click();
   });
 }
@@ -317,12 +321,12 @@ function readFileAsText(file: File): Promise<string> {
 function downloadJSON(data: any, filename: string): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  
+
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   a.click();
-  
+
   URL.revokeObjectURL(url);
 }
 
