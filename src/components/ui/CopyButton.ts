@@ -34,7 +34,7 @@ export class CopyButton {
     // Set initial content directly instead of calling updateButtonContent
     const iconHtml = this.getIconHtml();
     button.innerHTML = iconHtml;
-    
+
     return button;
   }
 
@@ -140,7 +140,6 @@ export class CopyButton {
 
       this.setState('success');
       this.scheduleStateReset(2000); // Reset after 2 seconds
-
     } catch (error) {
       console.error('Copy failed:', error);
       this.setState('error');

@@ -13,7 +13,7 @@ const CHATGPT_CONFIG = {
     // Main conversation container
     conversationContainer: '[data-testid^="conversation-turn"]',
     conversationMain: 'main[class*="main"]',
-    
+
     // Message elements (with fallbacks for UI updates)
     messages: [
       '[data-testid^="conversation-turn"]',
@@ -21,20 +21,20 @@ const CHATGPT_CONFIG = {
       '[data-message-author-role]',
       '.prose', // Fallback selector
     ],
-    
+
     // User and assistant message indicators
     userMessage: [
       '[data-message-author-role="user"]',
       '[data-testid="user-message"]',
       '.group.w-full:has(.whitespace-pre-wrap)',
     ],
-    
+
     assistantMessage: [
       '[data-message-author-role="assistant"]',
       '[data-testid="assistant-message"]',
       '.group.w-full:has(.markdown)',
     ],
-    
+
     // Text input area
     textInput: [
       'textarea[placeholder*="Send a message"]',
@@ -42,14 +42,10 @@ const CHATGPT_CONFIG = {
       '#prompt-textarea',
       'textarea', // Ultimate fallback
     ],
-    
+
     // Conversation title
-    conversationTitle: [
-      'h1',
-      '[data-testid="conversation-title"]',
-      '.text-2xl',
-    ],
-    
+    conversationTitle: ['h1', '[data-testid="conversation-title"]', '.text-2xl'],
+
     // Send button
     sendButton: [
       'button[data-testid="send-button"]',
@@ -76,7 +72,7 @@ class ChatGPTContentScript {
   private async initialize(): Promise<void> {
     try {
       console.log('Initializing ChatGPT Content Script');
-      
+
       // Verify we're on ChatGPT
       if (!this.isChatGPTSite()) {
         console.warn('Not a ChatGPT site, content script will not activate');
@@ -88,7 +84,7 @@ class ChatGPTContentScript {
       this.setupSPANavigation();
       this.setupDOMObserver();
       this.notifyBackgroundScriptReady();
-      
+
       this.isInitialized = true;
       console.log('ChatGPT Content Script initialized successfully');
     } catch (error) {
@@ -101,22 +97,22 @@ class ChatGPTContentScript {
   private isChatGPTSite(): boolean {
     const hostname = window.location.hostname;
     const pathname = window.location.pathname;
-    
+
     // Primary check: exact domain match
     if (hostname === CHATGPT_CONFIG.domain) {
       return true;
     }
-    
+
     // Fallback checks for subdomains or redirects
     if (hostname.includes('openai.com') && pathname.includes('chat')) {
       return true;
     }
-    
+
     // Additional check for chat-related URLs
     if (hostname.includes('chat') && hostname.includes('openai')) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -131,7 +127,7 @@ class ChatGPTContentScript {
         // Check if main conversation area exists
         const mainElement = this.findElement(CHATGPT_CONFIG.selectors.conversationMain);
         const hasMessages = this.findElement(CHATGPT_CONFIG.selectors.messages[0]);
-        
+
         if (mainElement && (hasMessages || document.readyState === 'complete')) {
           clearTimeout(timeout);
           resolve();
@@ -154,13 +150,15 @@ class ChatGPTContentScript {
     chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
       this.handleMessage(message)
         .then((response) => sendResponse(response))
-        .catch((error) => sendResponse({
-          success: false,
-          error: { code: 'CONTENT_SCRIPT_ERROR', message: error.message },
-          timestamp: new Date(),
-          requestId: message.requestId,
-        }));
-      
+        .catch((error) =>
+          sendResponse({
+            success: false,
+            error: { code: 'CONTENT_SCRIPT_ERROR', message: error.message },
+            timestamp: new Date(),
+            requestId: message.requestId,
+          })
+        );
+
       return true; // Keep the message channel open for async response
     });
   }
@@ -218,12 +216,12 @@ class ChatGPTContentScript {
     const originalPushState = history.pushState;
     const originalReplaceState = history.replaceState;
 
-    history.pushState = function(...args) {
+    history.pushState = function (...args) {
       originalPushState.apply(history, args);
       window.dispatchEvent(new Event('locationchange'));
     };
 
-    history.replaceState = function(...args) {
+    history.replaceState = function (...args) {
       originalReplaceState.apply(history, args);
       window.dispatchEvent(new Event('locationchange'));
     };
@@ -239,7 +237,7 @@ class ChatGPTContentScript {
     if (currentUrl !== this.lastUrl) {
       console.log('ChatGPT navigation detected:', currentUrl);
       this.lastUrl = currentUrl;
-      
+
       // Re-initialize for new conversation
       setTimeout(() => {
         this.notifyBackgroundScriptReady();
@@ -256,11 +254,12 @@ class ChatGPTContentScript {
         // Check for new messages
         if (mutation.type === 'childList') {
           const addedNodes = Array.from(mutation.addedNodes);
-          const hasNewMessage = addedNodes.some(node => 
-            node.nodeType === Node.ELEMENT_NODE &&
-            this.matchesAnySelector(node as Element, CHATGPT_CONFIG.selectors.messages)
+          const hasNewMessage = addedNodes.some(
+            (node) =>
+              node.nodeType === Node.ELEMENT_NODE &&
+              this.matchesAnySelector(node as Element, CHATGPT_CONFIG.selectors.messages)
           );
-          
+
           if (hasNewMessage) {
             shouldNotify = true;
           }
@@ -272,7 +271,8 @@ class ChatGPTContentScript {
       }
     });
 
-    const targetElement = this.findElement(CHATGPT_CONFIG.selectors.conversationMain) || document.body;
+    const targetElement =
+      this.findElement(CHATGPT_CONFIG.selectors.conversationMain) || document.body;
     this.observer.observe(targetElement, {
       childList: true,
       subtree: true,
@@ -282,7 +282,7 @@ class ChatGPTContentScript {
   // Utility: Find element with multiple selector fallbacks
   private findElement(selectors: string | string[]): Element | null {
     const selectorList = Array.isArray(selectors) ? selectors : [selectors];
-    
+
     for (const selector of selectorList) {
       try {
         const element = document.querySelector(selector);
@@ -293,13 +293,13 @@ class ChatGPTContentScript {
         console.warn(`Invalid selector: ${selector}`, error);
       }
     }
-    
+
     return null;
   }
 
   // Utility: Check if element matches any selector
   private matchesAnySelector(element: Element, selectors: string[]): boolean {
-    return selectors.some(selector => {
+    return selectors.some((selector) => {
       try {
         return element.matches(selector);
       } catch {
@@ -314,39 +314,68 @@ class ChatGPTContentScript {
     return titleElement?.textContent?.trim() || 'ChatGPT Conversation';
   }
 
-  // Extract conversation data for export
+  // Extract conversation data for export using enhanced parser
   private async extractConversationData(): Promise<any> {
-    const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
-    const conversationTitle = this.getConversationTitle();
-    
-    const messageData = Array.from(messages).map((messageElement) => {
-      const isUser = this.matchesAnySelector(messageElement, CHATGPT_CONFIG.selectors.userMessage);
-      const isAssistant = this.matchesAnySelector(messageElement, CHATGPT_CONFIG.selectors.assistantMessage);
-      
-      const role = isUser ? 'user' : isAssistant ? 'assistant' : 'unknown';
-      const content = messageElement.textContent?.trim() || '';
-      
-      return {
-        role,
-        content,
-        timestamp: new Date().toISOString(),
-      };
-    }).filter(msg => msg.content.length > 0);
+    try {
+      // Use the enhanced conversation parser for better data extraction
+      const { ConversationExporter } = await import('./conversation-exporter');
+      const exporter = new ConversationExporter();
 
-    return {
-      title: conversationTitle,
-      messages: messageData,
-      url: window.location.href,
-      site: CHATGPT_CONFIG.site,
-      extractedAt: new Date().toISOString(),
-    };
+      const exportData = await exporter.exportConversation({
+        format: 'json',
+        includeMetadata: true,
+        includeTimestamps: true,
+        validateData: true,
+        prettify: false,
+      });
+
+      return exportData.data;
+    } catch (error) {
+      console.warn('Enhanced parser failed, falling back to basic extraction:', error);
+
+      // Fallback to basic extraction
+      const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
+      const conversationTitle = this.getConversationTitle();
+
+      const messageData = Array.from(messages)
+        .map((messageElement) => {
+          const isUser = this.matchesAnySelector(
+            messageElement,
+            CHATGPT_CONFIG.selectors.userMessage
+          );
+          const isAssistant = this.matchesAnySelector(
+            messageElement,
+            CHATGPT_CONFIG.selectors.assistantMessage
+          );
+
+          const role = isUser ? 'user' : isAssistant ? 'assistant' : 'unknown';
+          const content = messageElement.textContent?.trim() || '';
+
+          return {
+            role,
+            content,
+            timestamp: new Date().toISOString(),
+          };
+        })
+        .filter((msg) => msg.content.length > 0);
+
+      return {
+        title: conversationTitle,
+        messages: messageData,
+        url: window.location.href,
+        site: CHATGPT_CONFIG.site,
+        extractedAt: new Date().toISOString(),
+      };
+    }
   }
 
   // Insert text into ChatGPT input
   private async insertTextToInput(text: string): Promise<boolean> {
     try {
-      const inputElement = this.findElement(CHATGPT_CONFIG.selectors.textInput) as HTMLTextAreaElement;
-      
+      const inputElement = this.findElement(
+        CHATGPT_CONFIG.selectors.textInput
+      ) as HTMLTextAreaElement;
+
       if (!inputElement) {
         throw new Error('ChatGPT input element not found');
       }
@@ -358,7 +387,7 @@ class ChatGPTContentScript {
       // Trigger input events to notify ChatGPT
       inputElement.dispatchEvent(new Event('input', { bubbles: true }));
       inputElement.dispatchEvent(new Event('change', { bubbles: true }));
-      
+
       // Focus the input
       inputElement.focus();
 
@@ -412,8 +441,10 @@ class ChatGPTContentScript {
   private scheduleRetry(): void {
     if (this.retryCount < this.maxRetries) {
       this.retryCount++;
-      console.log(`Retrying ChatGPT Content Script initialization (${this.retryCount}/${this.maxRetries})`);
-      
+      console.log(
+        `Retrying ChatGPT Content Script initialization (${this.retryCount}/${this.maxRetries})`
+      );
+
       setTimeout(() => {
         this.initialize();
       }, this.retryDelay * this.retryCount);
