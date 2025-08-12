@@ -81,6 +81,9 @@ export interface ExportOptions {
   includeMetadata?: boolean;
   saveToStorage?: boolean;
   filename?: string;
+  // TASK-0019: Export history options
+  forceDuplicate?: boolean;
+  url?: string;
 }
 
 export interface ConversationMessage {
@@ -107,6 +110,30 @@ export interface ConversationExport {
     exportVersion: string;
     userAgent: string;
   };
+}
+
+// TASK-0019: Export History Management Types
+export interface ExportHistoryEntry {
+  exportId: string;
+  title: string;
+  site: SupportedAISite;
+  format: ExportFormat;
+  exportedAt: string;
+  url: string;
+  fileSize: number;
+  messageCount: number;
+}
+
+export interface ExportStatistics {
+  totalExports: number;
+  totalFileSize: number;
+  averageFileSize: number;
+  totalMessages: number;
+  averageMessages: number;
+  siteBreakdown: Record<SupportedAISite, number>;
+  formatBreakdown: Record<ExportFormat, number>;
+  oldestExport: string | null;
+  newestExport: string | null;
 }
 
 // Chrome Extension Message Types

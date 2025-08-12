@@ -11,4 +11,5 @@ export {
 export { MessageValidator, type ValidationError, type ValidationResult } from './message-validator';
 export { PromptValidator } from './prompt-validator';
 export { ExportManager } from './export-manager';
+export { ExportHistoryManager } from './export-history-manager';
 export { AISiteConnector } from './ai-site-connector';
