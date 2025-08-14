@@ -148,7 +148,10 @@ export interface ChromeMessage {
 export type ChromeMessageType =
   | 'GET_PROMPTS'
   | 'SAVE_PROMPT'
+  | 'UPDATE_PROMPT'
+  | 'DELETE_PROMPT'
   | 'COPY_PROMPT'
+  | 'SEARCH_PROMPTS'
   | 'EXPORT_CONVERSATION'
   | 'SAVE_CONVERSATION'
   | 'GET_CONVERSATIONS'
