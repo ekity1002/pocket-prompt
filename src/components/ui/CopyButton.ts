@@ -5,7 +5,7 @@ export interface CopyButtonProps {
   promptId: string;
   onCopy: (promptId: string) => Promise<void>;
   disabled?: boolean;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'inline';
   className?: string;
 }
 
@@ -231,9 +231,6 @@ export class CopyButton {
 export function getCopyButtonStyles(): string {
   return `
     .copy-button {
-      position: absolute;
-      top: 8px;
-      right: 8px;
       width: 32px;
       height: 32px;
       border: none;
@@ -245,8 +242,15 @@ export function getCopyButtonStyles(): string {
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      z-index: 10;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-button--default,
+    .copy-button--compact {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 10;
     }
 
     .copy-button:hover:not(:disabled) {
@@ -276,6 +280,14 @@ export function getCopyButtonStyles(): string {
       height: 24px;
       top: 4px;
       right: 4px;
+    }
+
+    .copy-button--inline {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      margin-right: 4px;
+      opacity: 1;
     }
 
     /* States */

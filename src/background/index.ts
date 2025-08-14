@@ -2,13 +2,25 @@
 // Manifest V3 Service Worker
 // TASK-0018: ChatGPT会話データ管理実装
 
-import type { ChromeMessage, ChromeResponse, ConversationExport, ExportFormat } from '@/types';
+import type {
+  ChromeMessage,
+  ChromeResponse,
+  ConversationExport,
+  ExportFormat,
+  CreatePromptRequest,
+  UpdatePromptRequest,
+  PromptSearchOptions,
+} from '@/types';
 import { ConversationManager } from '@/core/conversation-manager';
+import { PromptManager } from '@/core/prompt-manager';
+import { PromptStorageAdapter } from '@/core/prompt-storage-adapter';
 
 console.log('Pocket-Prompt Background Script loaded');
 
-// Initialize conversation manager
+// Initialize managers
 const conversationManager = new ConversationManager();
+const promptStorageAdapter = new PromptStorageAdapter();
+const promptManager = new PromptManager(promptStorageAdapter);
 
 // Handle extension installation
 chrome.runtime.onInstalled.addListener((details) => {
@@ -53,20 +65,22 @@ async function handleMessage(
 
   switch (type) {
     case 'GET_PROMPTS':
-      return {
-        success: true,
-        data: { prompts: [], totalCount: 0 },
-        timestamp: new Date(),
-        requestId,
-      };
+      return await handleGetPrompts(message);
 
     case 'SAVE_PROMPT':
-      return {
-        success: true,
-        data: { saved: true },
-        timestamp: new Date(),
-        requestId,
-      };
+      return await handleSavePrompt(message);
+
+    case 'UPDATE_PROMPT':
+      return await handleUpdatePrompt(message);
+
+    case 'DELETE_PROMPT':
+      return await handleDeletePrompt(message);
+
+    case 'COPY_PROMPT':
+      return await handleCopyPrompt(message);
+
+    case 'SEARCH_PROMPTS':
+      return await handleSearchPrompts(message);
 
     case 'EXPORT_CONVERSATION':
       return await handleExportConversation(message, sender);
@@ -531,4 +545,270 @@ async function initializeDefaultSettings(): Promise<void> {
   });
 
   console.log('Default settings initialized');
+}
+
+// ========================================
+// PROMPT MANAGEMENT HANDLERS
+// TASK-0020: Background Script プロンプト管理統合
+// ========================================
+
+/**
+ * Handle GET_PROMPTS message
+ */
+async function handleGetPrompts(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const searchOptions = (message.data as PromptSearchOptions) || {};
+    const prompts = await promptManager.searchPrompts(searchOptions);
+
+    // Also get storage stats for UI display
+    const stats = await promptStorageAdapter.getStorageStats();
+
+    return {
+      success: true,
+      data: {
+        prompts: prompts.map((p) => ({
+          id: p.id,
+          title: p.title,
+          content: p.content,
+          tags: p.tags,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+          usageCount: p.metadata.usageCount,
+          lastUsedAt: p.metadata.lastUsedAt,
+        })),
+        totalCount: stats.totalPrompts,
+        storageInfo: {
+          usedSpace: stats.storageUsage,
+          availableSpace: stats.availableSpace,
+          totalPrompts: stats.totalPrompts,
+        },
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'GET_PROMPTS_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to get prompts',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
+}
+
+/**
+ * Handle SAVE_PROMPT message
+ */
+async function handleSavePrompt(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const promptData = message.data as CreatePromptRequest;
+
+    if (!promptData) {
+      throw new Error('No prompt data provided');
+    }
+
+    const savedPrompt = await promptManager.createPrompt(promptData);
+
+    return {
+      success: true,
+      data: {
+        prompt: {
+          id: savedPrompt.id,
+          title: savedPrompt.title,
+          content: savedPrompt.content,
+          tags: savedPrompt.tags,
+          createdAt: savedPrompt.createdAt,
+          updatedAt: savedPrompt.updatedAt,
+          usageCount: savedPrompt.metadata.usageCount,
+          lastUsedAt: savedPrompt.metadata.lastUsedAt,
+        },
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'SAVE_PROMPT_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to save prompt',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
+}
+
+/**
+ * Handle UPDATE_PROMPT message
+ */
+async function handleUpdatePrompt(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const updateData = message.data as { id: string; updates: UpdatePromptRequest };
+
+    if (!updateData?.id || !updateData.updates) {
+      throw new Error('Invalid update data provided');
+    }
+
+    const updatedPrompt = await promptManager.updatePrompt(updateData.id, updateData.updates);
+
+    return {
+      success: true,
+      data: {
+        prompt: {
+          id: updatedPrompt.id,
+          title: updatedPrompt.title,
+          content: updatedPrompt.content,
+          tags: updatedPrompt.tags,
+          createdAt: updatedPrompt.createdAt,
+          updatedAt: updatedPrompt.updatedAt,
+          usageCount: updatedPrompt.metadata.usageCount,
+          lastUsedAt: updatedPrompt.metadata.lastUsedAt,
+        },
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'UPDATE_PROMPT_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to update prompt',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
+}
+
+/**
+ * Handle DELETE_PROMPT message
+ */
+async function handleDeletePrompt(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const deleteData = message.data as { id: string };
+
+    if (!deleteData?.id) {
+      throw new Error('No prompt ID provided for deletion');
+    }
+
+    const deleted = await promptManager.deletePrompt(deleteData.id);
+
+    if (!deleted) {
+      throw new Error('Prompt not found or could not be deleted');
+    }
+
+    return {
+      success: true,
+      data: { deleted: true, promptId: deleteData.id },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'DELETE_PROMPT_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to delete prompt',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
+}
+
+/**
+ * Handle COPY_PROMPT message - copies prompt to clipboard and records usage
+ */
+async function handleCopyPrompt(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const copyData = message.data as { promptId: string };
+
+    if (!copyData?.promptId) {
+      throw new Error('No prompt ID provided for copying');
+    }
+
+    // Get the prompt
+    const prompt = await promptManager.getPrompt(copyData.promptId);
+    if (!prompt) {
+      throw new Error('Prompt not found');
+    }
+
+    // Record usage (increment usage count and update last used timestamp)
+    await promptManager.recordUsage(copyData.promptId);
+
+    // Note: Clipboard writing will be handled by the content script or popup
+    // Background script cannot directly access clipboard API in Manifest V3
+
+    return {
+      success: true,
+      data: {
+        content: prompt.content,
+        promptId: copyData.promptId,
+        title: prompt.title,
+        usageCount: prompt.metadata.usageCount + 1, // New usage count
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'COPY_PROMPT_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to copy prompt',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
+}
+
+/**
+ * Handle SEARCH_PROMPTS message
+ */
+async function handleSearchPrompts(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const searchOptions = message.data as PromptSearchOptions;
+
+    if (!searchOptions) {
+      throw new Error('No search options provided');
+    }
+
+    const results = await promptManager.searchPrompts(searchOptions);
+
+    return {
+      success: true,
+      data: {
+        prompts: results.map((p) => ({
+          id: p.id,
+          title: p.title,
+          content: p.content,
+          tags: p.tags,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+          usageCount: p.metadata.usageCount,
+          lastUsedAt: p.metadata.lastUsedAt,
+        })),
+        totalCount: results.length,
+        query: searchOptions,
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'SEARCH_PROMPTS_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to search prompts',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
 }

@@ -1,8 +1,10 @@
 // Popup script for Pocket-Prompt Chrome Extension
 
-import type { ChromeMessage, ChromeResponse } from '@/types';
+import type { ChromeMessage, ChromeResponse, CreatePromptRequest } from '@/types';
 import { CopyButton } from '../components/ui/CopyButton';
+import { DeleteButton } from '../components/ui/DeleteButton';
 import { toast } from '../components/ui/ToastNotification';
+import { PromptCreateModal } from '../components/prompt/PromptCreateModal';
 
 console.log('Pocket-Prompt Popup loaded');
 
@@ -11,8 +13,9 @@ const settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
 const promptList = document.getElementById('promptList') as HTMLDivElement;
 const addPromptBtn = document.getElementById('addPromptBtn') as HTMLButtonElement;
 
-// Copy button instances management
+// UI component instances management
 const copyButtons = new Map<string, CopyButton>();
+const deleteButtons = new Map<string, DeleteButton>();
 
 // Event listeners
 settingsBtn.addEventListener('click', openSettings);
@@ -93,18 +96,21 @@ function renderPrompts(
     .map(
       (prompt) => `
         <div class="prompt-item" data-id="${prompt.id}" tabindex="0" role="button" aria-label="プロンプト: ${escapeHtml(prompt.title)}">
-          <div class="prompt-title">${escapeHtml(prompt.title)}</div>
-          <div class="prompt-preview">${escapeHtml(prompt.content.substring(0, 80))}...</div>
-          ${
-            prompt.usageCount !== undefined || prompt.lastUsedAt
-              ? `
-            <div class="prompt-meta">
-              ${prompt.usageCount !== undefined ? `<span>使用回数: ${prompt.usageCount}</span>` : ''}
-              ${prompt.lastUsedAt ? `<span>最終使用: ${formatLastUsed(prompt.lastUsedAt)}</span>` : ''}
-            </div>
-          `
-              : ''
-          }
+          <div class="prompt-content">
+            <div class="prompt-title">${escapeHtml(prompt.title)}</div>
+            <div class="prompt-preview">${escapeHtml(prompt.content.substring(0, 80))}...</div>
+            ${
+              prompt.usageCount !== undefined || prompt.lastUsedAt
+                ? `
+              <div class="prompt-meta">
+                ${prompt.usageCount !== undefined ? `<span>使用回数: ${prompt.usageCount}</span>` : ''}
+                ${prompt.lastUsedAt ? `<span>最終使用: ${formatLastUsed(prompt.lastUsedAt)}</span>` : ''}
+              </div>
+            `
+                : ''
+            }
+          </div>
+          <div class="prompt-actions"></div>
         </div>
       `
     )
@@ -127,8 +133,37 @@ async function copyPrompt(promptId: string): Promise<void> {
   try {
     const response = await sendMessageToBackground(message);
 
-    if (response.success) {
-      toast.success('プロンプトをコピーしました');
+    if (response.success && response.data) {
+      const { content, title } = response.data as { content: string; title: string };
+
+      // Copy to clipboard
+      try {
+        await navigator.clipboard.writeText(content);
+        toast.success(`「${title}」をクリップボードにコピーしました`);
+      } catch (clipboardError) {
+        // Fallback for older browsers or permission issues
+        console.warn('Clipboard API failed, using fallback:', clipboardError);
+
+        // Create temporary textarea for fallback copy
+        const textarea = document.createElement('textarea');
+        textarea.value = content;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        textarea.style.pointerEvents = 'none';
+        document.body.appendChild(textarea);
+
+        try {
+          textarea.select();
+          document.execCommand('copy');
+          toast.success(`「${title}」をクリップボードにコピーしました`);
+        } catch (fallbackError) {
+          console.error('Fallback copy failed:', fallbackError);
+          toast.error('クリップボードへのコピーに失敗しました');
+        } finally {
+          document.body.removeChild(textarea);
+        }
+      }
+
       // Update usage statistics
       await loadPrompts();
     } else {
@@ -146,8 +181,61 @@ async function copyPrompt(promptId: string): Promise<void> {
 
 function createNewPrompt(): void {
   console.log('Creating new prompt...');
-  // TODO: Open prompt creation dialog or navigate to options page
-  openOptions();
+
+  const modal = new PromptCreateModal({
+    onSave: async (promptData: CreatePromptRequest) => {
+      const message: ChromeMessage = {
+        type: 'SAVE_PROMPT',
+        data: promptData,
+        requestId: generateRequestId(),
+        timestamp: new Date(),
+      };
+
+      const response = await sendMessageToBackground(message);
+
+      if (!response.success) {
+        const errorMessage = response.error?.message || 'プロンプトの保存に失敗しました';
+        throw new Error(errorMessage);
+      }
+
+      // Success - reload prompts to show the new one
+      await loadPrompts();
+      toast.success('プロンプトを作成しました');
+    },
+    onCancel: () => {
+      console.log('Prompt creation cancelled');
+    },
+  });
+
+  modal.show();
+}
+
+async function deletePrompt(promptId: string): Promise<void> {
+  const message: ChromeMessage = {
+    type: 'DELETE_PROMPT',
+    data: { id: promptId },
+    requestId: generateRequestId(),
+    timestamp: new Date(),
+  };
+
+  try {
+    const response = await sendMessageToBackground(message);
+
+    if (response.success) {
+      toast.success('プロンプトを削除しました');
+      // Reload prompts to reflect deletion
+      await loadPrompts();
+    } else {
+      const errorMessage = response.error?.message || 'プロンプトの削除に失敗しました';
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  } catch (error) {
+    console.error('Failed to delete prompt:', error);
+    const errorMessage = error instanceof Error ? error.message : 'プロンプトの削除に失敗しました';
+    toast.error(errorMessage);
+    throw error;
+  }
 }
 
 function openSettings(): void {
@@ -195,31 +283,52 @@ function setupPromptInteractions(
     const promptId = item.getAttribute('data-id');
     if (!promptId) continue;
 
+    const prompt = prompts.find((p) => p.id === promptId);
+    if (!prompt) continue;
+
     // Create copy button for each prompt item
     const copyButton = new CopyButton({
       promptId,
       onCopy: copyPrompt,
-      variant: 'default',
+      variant: 'inline',
     });
 
-    // Store reference for cleanup
-    copyButtons.set(promptId, copyButton);
+    // Create delete button for each prompt item
+    const deleteButton = new DeleteButton({
+      promptId,
+      promptTitle: prompt.title,
+      onDelete: deletePrompt,
+      variant: 'inline',
+    });
 
-    // Append copy button to prompt item
-    item.appendChild(copyButton.getElement());
+    // Store references for cleanup
+    copyButtons.set(promptId, copyButton);
+    deleteButtons.set(promptId, deleteButton);
+
+    // Append buttons to prompt actions container
+    const actionsContainer = item.querySelector('.prompt-actions');
+    if (actionsContainer) {
+      actionsContainer.appendChild(copyButton.getElement());
+      actionsContainer.appendChild(deleteButton.getElement());
+    }
 
     // Add keyboard navigation support
-    item.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
+    item.addEventListener('keydown', (e: Event) => {
+      const keyboardEvent = e as KeyboardEvent;
+      if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+        keyboardEvent.preventDefault();
         copyPrompt(promptId);
       }
     });
 
     // Remove click event from prompt item to avoid conflicts
     item.addEventListener('click', (e) => {
-      // Only trigger copy if not clicking on the copy button
-      if (!e.target || !(e.target as Element).closest('.copy-button')) {
+      // Only trigger copy if not clicking on buttons
+      if (
+        !e.target ||
+        (!(e.target as Element).closest('.copy-button') &&
+          !(e.target as Element).closest('.delete-button'))
+      ) {
         copyPrompt(promptId);
       }
     });
@@ -227,11 +336,16 @@ function setupPromptInteractions(
 }
 
 function clearCopyButtons(): void {
-  // Clean up existing copy button instances
+  // Clean up existing UI component instances
   for (const copyButton of copyButtons.values()) {
     copyButton.destroy();
   }
   copyButtons.clear();
+
+  for (const deleteButton of deleteButtons.values()) {
+    deleteButton.destroy();
+  }
+  deleteButtons.clear();
 }
 
 function showLoadingState(): void {
@@ -266,10 +380,7 @@ function formatLastUsed(lastUsedAt: string): string {
   }
 }
 
-function showSuccess(message: string): void {
-  console.log('Success:', message);
-  toast.success(message);
-}
+// Removed unused showSuccess function
 
 function showError(message: string): void {
   console.error('Error:', message);
