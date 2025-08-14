@@ -126,9 +126,12 @@
 ✅ **API設計**: 内部通信仕様定義完了  
 
 ### 開発ガイドライン
-- **コード品質**: ESLint + Prettier + strict TypeScript
+- **コード品質**: Biome.js (リント・フォーマット) + strict TypeScript
+- **CSS Framework**: Tailwind CSS v3 + PostCSS + Autoprefixer
+  - Chrome拡張向けカスタムテーマ設定
+  - ユーティリティファーストアプローチ
 - **テスト戦略**: Jest + Chrome Extension Testing Library
-- **ビルド設定**: Webpack/Vite + HMR対応
+- **ビルド設定**: Vite (Chrome拡張最適化) + 環境別ビルド
 - **デプロイ戦略**: Chrome Developer Mode → Web Store公開
 
 ## 🔍 設計検証

@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Chrome Extension specific base styles */
+@layer base {
+  html {
+    font-size: 14px; /* Chrome extension standard */
+  }
+
+  body {
+    @apply font-sans text-gray-900 bg-gray-50;
+    margin: 0;
+  }
+
+  button {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-opacity-50;
+  }
+}
+
+/* Chrome Extension UI Components */
+@layer components {
+  .chrome-popup {
+    @apply w-88 min-h-96 p-4 bg-white;
+  }
+
+  .chrome-header {
+    @apply flex items-center justify-between mb-6 pb-4 border-b border-gray-200;
+  }
+
+  .chrome-button {
+    @apply px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 
+           transition-colors duration-200 font-medium text-sm;
+  }
+
+  .chrome-button-secondary {
+    @apply px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 
+           transition-colors duration-200 font-medium text-sm;
+  }
+
+  .chrome-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+           placeholder-gray-400 focus:border-primary-500;
+  }
+
+  .chrome-card {
+    @apply bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md 
+           transition-shadow duration-200;
+  }
+
+  .chrome-toggle {
+    @apply relative inline-block w-12 h-6;
+  }
+
+  .chrome-toggle input {
+    @apply opacity-0 w-0 h-0;
+  }
+
+  .chrome-toggle-slider {
+    @apply absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 
+           rounded-full transition-colors duration-300;
+  }
+
+  .chrome-toggle-slider:before {
+    @apply absolute content-[''] h-4 w-4 left-1 bottom-1 bg-white rounded-full 
+           transition-transform duration-300;
+  }
+
+  .chrome-toggle input:checked + .chrome-toggle-slider {
+    @apply bg-primary-500;
+  }
+
+  .chrome-toggle input:checked + .chrome-toggle-slider:before {
+    @apply transform translate-x-6;
+  }
+}
