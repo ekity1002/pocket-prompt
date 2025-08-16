@@ -7,6 +7,11 @@ import { validatePromptTitle, validatePromptContent, validateTags } from '@/type
 export interface PromptCreateModalOptions {
   onSave: (promptData: CreatePromptRequest) => Promise<void>;
   onCancel: () => void;
+  initialData?: {
+    title: string;
+    content: string;
+    tags: string[];
+  };
 }
 
 export interface PromptFormState {
@@ -42,7 +47,17 @@ export class PromptCreateModal {
 
   constructor(options: PromptCreateModalOptions) {
     this.options = options;
+    
+    // Set initial data if provided
+    if (options.initialData) {
+      this.state.title = options.initialData.title;
+      this.state.content = options.initialData.content;
+      this.state.tags = [...options.initialData.tags];
+      this.state.isDirty = false; // Not dirty since it's initial data
+    }
+    
     this.createElement();
+    this.setInitialValues();
     this.setupEventListeners();
   }
 
@@ -119,7 +134,7 @@ export class PromptCreateModal {
       <div class="modal-overlay">
         <div class="modal-content">
           <div class="modal-header">
-            <h2 id="modal-title">📝 新しいプロンプト作成</h2>
+            <h2 id="modal-title">📝 ${this.options.initialData ? 'プロンプト編集' : '新しいプロンプト作成'}</h2>
             <button type="button" class="modal-close" aria-label="閉じる">✕</button>
           </div>
           
@@ -188,8 +203,8 @@ export class PromptCreateModal {
               キャンセル
             </button>
             <button type="submit" class="btn btn-primary save-btn" disabled>
-              <span class="btn-text">保存</span>
-              <span class="btn-spinner hidden">保存中...</span>
+              <span class="btn-text">${this.options.initialData ? '更新' : '保存'}</span>
+              <span class="btn-spinner hidden">${this.options.initialData ? '更新中...' : '保存中...'}</span>
             </button>
           </div>
 
@@ -199,6 +214,35 @@ export class PromptCreateModal {
     `;
 
     this.addModalStyles();
+  }
+
+  /**
+   * Set initial values in form fields
+   */
+  private setInitialValues(): void {
+    if (!this.element) return;
+
+    const titleInput = this.element.querySelector('#prompt-title') as HTMLInputElement;
+    const contentTextarea = this.element.querySelector('#prompt-content') as HTMLTextAreaElement;
+    const tagsInput = this.element.querySelector('#prompt-tags') as HTMLInputElement;
+
+    if (titleInput) {
+      titleInput.value = this.state.title;
+      this.updateCharacterCounter('title', this.state.title, 200);
+    }
+
+    if (contentTextarea) {
+      contentTextarea.value = this.state.content;
+      this.updateCharacterCounter('content', this.state.content, 10000);
+      this.autoResizeTextarea(contentTextarea);
+    }
+
+    if (tagsInput) {
+      tagsInput.value = this.state.tags.join(', ');
+    }
+
+    // Update form validity after setting initial values
+    this.updateFormValidity();
   }
 
   /**

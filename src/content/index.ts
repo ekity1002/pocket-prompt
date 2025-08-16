@@ -3,18 +3,22 @@
 // Injected into AI sites (ChatGPT, Claude, Gemini)
 
 import type { ChromeMessage, ChromeResponse, SupportedAISite } from '@/types';
+// Import ChatGPT content script directly
+import { initializeChatGPTHandler } from './chatgpt-content-script';
 
 console.log('Pocket-Prompt Content Script loaded on:', window.location.href);
+console.log('DEBUG: hostname =', window.location.hostname);
+console.log('DEBUG: pathname =', window.location.pathname);
 
 // Detect which AI site we're on and initialize appropriate handler
 const currentSite = detectAISite();
+console.log('DEBUG: Detected site =', currentSite);
 
 if (currentSite === 'chatgpt') {
   console.log('Initializing ChatGPT Content Script');
-  // Import and initialize ChatGPT-specific content script
-  import('./chatgpt-content-script').catch((error) => {
-    console.error('Failed to load ChatGPT content script:', error);
-  });
+  console.log('DEBUG: Loading ChatGPT content script via direct import');
+  // Load ChatGPT content script via direct import to maintain Chrome API access
+  initializeChatGPTContentScript();
 } else if (currentSite) {
   console.log(`Detected AI site: ${currentSite} (basic handler)`);
   initializeBasicContentScript();
@@ -27,6 +31,7 @@ function detectAISite(): SupportedAISite | null {
 
   // ChatGPT detection with comprehensive checks
   if (
+    hostname === 'chatgpt.com' ||
     hostname === 'chat.openai.com' ||
     (hostname.includes('openai.com') && window.location.pathname.includes('chat'))
   ) {
@@ -44,6 +49,18 @@ function detectAISite(): SupportedAISite | null {
   }
 
   return null;
+}
+
+// Initialize ChatGPT content script directly
+async function initializeChatGPTContentScript(): Promise<void> {
+  try {
+    console.log('DEBUG: Starting ChatGPT content script initialization');
+    // Initialize the ChatGPT handler directly
+    await initializeChatGPTHandler();
+    console.log('DEBUG: ChatGPT handler initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize ChatGPT content script:', error);
+  }
 }
 
 // Basic content script for non-ChatGPT AI sites (Claude, Gemini)

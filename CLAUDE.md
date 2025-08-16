@@ -4,6 +4,8 @@
 gitフローで開発を行う.
 各種修正のプルリクはdevelopブランチに行う
 コミットする前にbiome format をかけること。
+機能実装時は serena mcpを活用して行うこと
+調査時はgemini seearchを使用すること
 
 ■技術スタック
 - Node.js バージョン管理: Volta (Node.js 20.19.4)

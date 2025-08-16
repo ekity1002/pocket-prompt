@@ -8,18 +8,15 @@ import { PromptCreateModal } from '../components/prompt/PromptCreateModal';
 
 console.log('Pocket-Prompt Popup loaded');
 
-// DOM elements
-const settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
-const promptList = document.getElementById('promptList') as HTMLDivElement;
-const addPromptBtn = document.getElementById('addPromptBtn') as HTMLButtonElement;
+// DOM elements - will be initialized after DOM loads
+let settingsBtn: HTMLButtonElement | null = null;
+let exportBtn: HTMLButtonElement | null = null;
+let promptList: HTMLDivElement | null = null;
+let addPromptBtn: HTMLButtonElement | null = null;
 
 // UI component instances management
 const copyButtons = new Map<string, CopyButton>();
 const deleteButtons = new Map<string, DeleteButton>();
-
-// Event listeners
-settingsBtn.addEventListener('click', openSettings);
-addPromptBtn.addEventListener('click', createNewPrompt);
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', initializePopup);
@@ -28,10 +25,39 @@ async function initializePopup(): Promise<void> {
   console.log('Initializing popup...');
 
   try {
+    // Initialize DOM elements
+    initializeDOMElements();
+
+    // Setup event listeners
+    setupEventListeners();
+
     await loadPrompts();
+    await checkChatGPTTab();
   } catch (error) {
     console.error('Failed to initialize popup:', error);
     showError('初期化に失敗しました');
+  }
+}
+
+function initializeDOMElements(): void {
+  settingsBtn = document.getElementById('settingsBtn') as HTMLButtonElement;
+  exportBtn = document.getElementById('exportBtn') as HTMLButtonElement;
+  promptList = document.getElementById('promptList') as HTMLDivElement;
+  addPromptBtn = document.getElementById('addPromptBtn') as HTMLButtonElement;
+}
+
+function setupEventListeners(): void {
+  // Check if elements exist before adding listeners
+  if (settingsBtn) {
+    settingsBtn.addEventListener('click', openSettings);
+  }
+
+  if (exportBtn) {
+    exportBtn.addEventListener('click', exportChatGPTConversation);
+  }
+
+  if (addPromptBtn) {
+    addPromptBtn.addEventListener('click', createNewPrompt);
   }
 }
 
@@ -83,12 +109,14 @@ function renderPrompts(
   clearCopyButtons();
 
   if (totalCount === 0) {
-    promptList.innerHTML = `
-      <div class="empty-state">
-        <p>プロンプトがまだありません</p>
-        <p style="font-size: 12px;">最初のプロンプトを作成しましょう</p>
-      </div>
-    `;
+    if (promptList) {
+      promptList.innerHTML = `
+        <div class="empty-state">
+          <p>プロンプトがまだありません</p>
+          <p style="font-size: 12px;">最初のプロンプトを作成しましょう</p>
+        </div>
+      `;
+    }
     return;
   }
 
@@ -116,10 +144,11 @@ function renderPrompts(
     )
     .join('');
 
-  promptList.innerHTML = promptsHtml;
-
-  // Setup copy buttons and event listeners
-  setupPromptInteractions(prompts);
+  if (promptList) {
+    promptList.innerHTML = promptsHtml;
+    // Setup copy buttons and event listeners
+    setupPromptInteractions(prompts);
+  }
 }
 
 async function copyPrompt(promptId: string): Promise<void> {
@@ -164,8 +193,7 @@ async function copyPrompt(promptId: string): Promise<void> {
         }
       }
 
-      // Update usage statistics
-      await loadPrompts();
+      // Note: Removed loadPrompts() to avoid reordering prompts on click
     } else {
       const errorMessage = response.error?.message || 'コピーに失敗しました';
       toast.error(errorMessage);
@@ -180,7 +208,6 @@ async function copyPrompt(promptId: string): Promise<void> {
 }
 
 function createNewPrompt(): void {
-  console.log('Creating new prompt...');
 
   const modal = new PromptCreateModal({
     onSave: async (promptData: CreatePromptRequest) => {
@@ -238,12 +265,145 @@ async function deletePrompt(promptId: string): Promise<void> {
   }
 }
 
+async function editPrompt(promptId: string): Promise<void> {
+  try {
+    // Get prompt data from background
+    const message: ChromeMessage = {
+      type: 'GET_PROMPT',
+      data: { id: promptId },
+      requestId: generateRequestId(),
+      timestamp: new Date(),
+    };
+
+    const response = await sendMessageToBackground(message);
+
+    if (response.success && response.data) {
+      const promptData = response.data as {
+        id: string;
+        title: string;
+        content: string;
+        tags: string[];
+      };
+
+      // Create modal with existing data
+      const modal = new PromptCreateModal({
+        onSave: async (updatedPromptData: CreatePromptRequest) => {
+          const updateMessage: ChromeMessage = {
+            type: 'UPDATE_PROMPT',
+            data: {
+              id: promptId,
+              updates: updatedPromptData,
+            },
+            requestId: generateRequestId(),
+            timestamp: new Date(),
+          };
+
+          const updateResponse = await sendMessageToBackground(updateMessage);
+
+          if (!updateResponse.success) {
+            const errorMessage = updateResponse.error?.message || 'プロンプトの更新に失敗しました';
+            throw new Error(errorMessage);
+          }
+
+          // Reload prompts to reflect changes
+          await loadPrompts();
+          toast.success('プロンプトを更新しました');
+        },
+        onCancel: () => {
+          // Modal cancelled
+        },
+        initialData: {
+          title: promptData.title,
+          content: promptData.content,
+          tags: promptData.tags,
+        },
+      });
+
+      modal.show();
+    } else {
+      const errorMessage = response.error?.message || 'プロンプトの取得に失敗しました';
+      toast.error(errorMessage);
+    }
+  } catch (error) {
+    console.error('Failed to edit prompt:', error);
+    toast.error('プロンプトの編集に失敗しました');
+  }
+}
+
 function openSettings(): void {
   openOptions();
 }
 
 function openOptions(): void {
   chrome.runtime.openOptionsPage();
+}
+
+async function checkChatGPTTab(): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const currentTab = tabs[0];
+
+    const isChatGPT =
+      currentTab?.url?.includes('chatgpt.com') || currentTab?.url?.includes('chat.openai.com');
+
+    if (exportBtn) {
+      if (isChatGPT) {
+        exportBtn.style.display = 'flex';
+      } else {
+        exportBtn.style.display = 'none';
+      }
+    }
+  } catch (error) {
+    console.error('Failed to check ChatGPT tab:', error);
+    if (exportBtn) {
+      exportBtn.style.display = 'none';
+    }
+  }
+}
+
+async function exportChatGPTConversation(): Promise<void> {
+  try {
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    const currentTab = tabs[0];
+
+    if (
+      !currentTab?.url?.includes('chatgpt.com') &&
+      !currentTab?.url?.includes('chat.openai.com')
+    ) {
+      toast.error('ChatGPTページでのみ利用可能です');
+      return;
+    }
+
+    if (!currentTab?.id) {
+      toast.error('タブ情報を取得できませんでした');
+      return;
+    }
+
+    const message: ChromeMessage = {
+      type: 'EXPORT_CONVERSATION',
+      data: {
+        format: 'markdown',
+        tabId: currentTab.id,
+      },
+      requestId: generateRequestId(),
+      timestamp: new Date(),
+    };
+
+    const response = await sendMessageToBackground(message);
+
+    if (response.success && response.data && typeof response.data === 'object' && 'downloadInfo' in response.data) {
+      const downloadInfo = (response.data as { downloadInfo: { filename: string } }).downloadInfo;
+      toast.success(`${downloadInfo.filename} をダウンロードしました`);
+    } else if (response.success) {
+      toast.success('会話をエクスポートしました');
+    } else {
+      const errorMessage = response.error?.message || 'エクスポートに失敗しました';
+      toast.error(errorMessage);
+    }
+  } catch (error) {
+    console.error('Failed to export conversation:', error);
+    toast.error('エクスポートに失敗しました');
+  }
 }
 
 async function sendMessageToBackground(message: ChromeMessage): Promise<ChromeResponse> {
@@ -277,6 +437,8 @@ function escapeHtml(unsafe: string): string {
 function setupPromptInteractions(
   prompts: Array<{ id: string; title: string; content: string }>
 ): void {
+  if (!promptList) return;
+
   const promptItems = promptList.querySelectorAll('.prompt-item');
 
   for (const item of promptItems) {
@@ -293,7 +455,7 @@ function setupPromptInteractions(
       variant: 'inline',
     });
 
-    // Create delete button for each prompt item
+    // Create delete button for each prompt item  
     const deleteButton = new DeleteButton({
       promptId,
       promptTitle: prompt.title,
@@ -305,31 +467,33 @@ function setupPromptInteractions(
     copyButtons.set(promptId, copyButton);
     deleteButtons.set(promptId, deleteButton);
 
-    // Append buttons to prompt actions container
+    // Append buttons to prompt actions container in the correct order
     const actionsContainer = item.querySelector('.prompt-actions');
     if (actionsContainer) {
-      actionsContainer.appendChild(copyButton.getElement());
+      // Add delete button first, then copy button (delete button next to copy)
       actionsContainer.appendChild(deleteButton.getElement());
+      actionsContainer.appendChild(copyButton.getElement());
     }
 
-    // Add keyboard navigation support
+    // Add keyboard navigation support  
     item.addEventListener('keydown', (e: Event) => {
       const keyboardEvent = e as KeyboardEvent;
       if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
         keyboardEvent.preventDefault();
-        copyPrompt(promptId);
+        // Change behavior: open edit modal instead of copying
+        editPrompt(promptId);
       }
     });
 
-    // Remove click event from prompt item to avoid conflicts
+    // Change click event to open edit modal instead of copying
     item.addEventListener('click', (e) => {
-      // Only trigger copy if not clicking on buttons
+      // Only trigger edit if not clicking on buttons
       if (
         !e.target ||
         (!(e.target as Element).closest('.copy-button') &&
           !(e.target as Element).closest('.delete-button'))
       ) {
-        copyPrompt(promptId);
+        editPrompt(promptId);
       }
     });
   }
@@ -349,12 +513,14 @@ function clearCopyButtons(): void {
 }
 
 function showLoadingState(): void {
-  promptList.innerHTML = `
-    <div class="loading-state">
-      <div class="loading-spinner"></div>
-      <p>プロンプトを読み込んでいます...</p>
-    </div>
-  `;
+  if (promptList) {
+    promptList.innerHTML = `
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>プロンプトを読み込んでいます...</p>
+      </div>
+    `;
+  }
 }
 
 function formatLastUsed(lastUsedAt: string): string {
@@ -375,7 +541,7 @@ function formatLastUsed(lastUsedAt: string): string {
       month: 'short',
       day: 'numeric',
     });
-  } catch (error) {
+  } catch {
     return '---';
   }
 }
