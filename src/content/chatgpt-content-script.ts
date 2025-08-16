@@ -175,7 +175,6 @@ class ChatGPTContentScript {
 
   // Handle messages from background script
   private async handleMessage(message: ChromeMessage): Promise<ChromeResponse> {
-    console.log('Content script received message:', message);
 
     switch (message.type) {
       case 'GET_PAGE_INFO':
@@ -326,13 +325,11 @@ class ChatGPTContentScript {
 
   // Extract conversation data for export using enhanced parser
   private async extractConversationData(): Promise<any> {
-    console.log('Starting conversation data extraction...');
     
     // Use basic extraction (enhanced parser has import issues in content script)
     const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
     const conversationTitle = this.getConversationTitle();
 
-    console.log('Found messages:', messages.length);
 
     const messageData = Array.from(messages)
       .map((messageElement, index) => {
@@ -365,8 +362,6 @@ class ChatGPTContentScript {
 
         const content = messageElement.textContent?.trim() || '';
 
-        // Debug logging
-        console.log(`Message ${index}: role=${role}, isUser=${isUser}, isAssistant=${isAssistant}, authorRole=${authorRole}`);
 
         return {
           role,
@@ -376,7 +371,6 @@ class ChatGPTContentScript {
       })
       .filter((msg) => msg.content.length > 0);
 
-    console.log('Extracted message data:', messageData.length, 'messages');
 
     const result = {
       title: conversationTitle,
@@ -386,7 +380,6 @@ class ChatGPTContentScript {
       extractedAt: new Date().toISOString(),
     };
 
-    console.log('Final conversation data:', result);
     return result;
   }
 

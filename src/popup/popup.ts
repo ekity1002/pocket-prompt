@@ -208,7 +208,6 @@ async function copyPrompt(promptId: string): Promise<void> {
 }
 
 function createNewPrompt(): void {
-  console.log('Creating new prompt...');
 
   const modal = new PromptCreateModal({
     onSave: async (promptData: CreatePromptRequest) => {
@@ -311,7 +310,7 @@ async function editPrompt(promptId: string): Promise<void> {
           toast.success('プロンプトを更新しました');
         },
         onCancel: () => {
-          console.log('Prompt edit cancelled');
+          // Modal cancelled
         },
         initialData: {
           title: promptData.title,
@@ -390,18 +389,10 @@ async function exportChatGPTConversation(): Promise<void> {
       timestamp: new Date(),
     };
 
-    console.log('Sending export message:', message);
-    console.log('Message data details:', {
-      tabId: message.data.tabId,
-      format: message.data.format,
-      type: message.type,
-    });
     const response = await sendMessageToBackground(message);
-    console.log('Export response:', response);
-    console.log('Error details:', response.error);
 
-    if (response.success && response.data?.downloadInfo) {
-      const downloadInfo = response.data.downloadInfo;
+    if (response.success && response.data && typeof response.data === 'object' && 'downloadInfo' in response.data) {
+      const downloadInfo = (response.data as { downloadInfo: { filename: string } }).downloadInfo;
       toast.success(`${downloadInfo.filename} をダウンロードしました`);
     } else if (response.success) {
       toast.success('会話をエクスポートしました');
@@ -550,7 +541,7 @@ function formatLastUsed(lastUsedAt: string): string {
       month: 'short',
       day: 'numeric',
     });
-  } catch (error) {
+  } catch {
     return '---';
   }
 }

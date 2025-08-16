@@ -34,14 +34,9 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 // Handle messages from popup, options, and content scripts
 chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
-  console.log('Background received message:', message.type);
-  console.log('Full message:', message);
-  console.log('Sender:', sender);
-
   // Handle async responses
   handleMessage(message, sender)
     .then((response: ChromeResponse) => {
-      console.log('Background sending response:', response);
       sendResponse(response);
     })
     .catch((error: Error) => {
@@ -55,7 +50,6 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
         timestamp: new Date(),
         requestId: message.requestId,
       };
-      console.log('Background sending error response:', errorResponse);
       sendResponse(errorResponse);
     });
 
@@ -92,7 +86,6 @@ async function handleMessage(
       return await handleGetPrompt(message);
 
     case 'EXPORT_CONVERSATION':
-      console.log('About to call handleExportConversation');
       return await handleExportConversation(message, sender);
 
     case 'SAVE_CONVERSATION':
@@ -141,16 +134,8 @@ async function handleExportConversation(
   sender: chrome.runtime.MessageSender
 ): Promise<ChromeResponse> {
   try {
-    console.log('handleExportConversation called with:', {
-      messageData: message.data,
-      senderTab: sender.tab,
-      senderTabId: sender.tab?.id,
-    });
-
     // Try to get tab ID from sender first, then from message data
     const tabId = sender.tab?.id || (message.data as any)?.tabId;
-
-    console.log('Resolved tabId:', tabId);
 
     if (!tabId) {
       throw new Error('No tab ID available for content script communication');
@@ -222,7 +207,6 @@ async function handleExportConversation(
         saveAs: true,
       });
 
-      console.log('Download initiated successfully:', filename);
     } catch (downloadError) {
       console.error('Download failed:', downloadError);
       throw new Error('ファイルのダウンロードに失敗しました');
