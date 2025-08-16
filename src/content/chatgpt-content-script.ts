@@ -175,7 +175,6 @@ class ChatGPTContentScript {
 
   // Handle messages from background script
   private async handleMessage(message: ChromeMessage): Promise<ChromeResponse> {
-    console.log('Content script received message:', message);
 
     switch (message.type) {
       case 'GET_PAGE_INFO':
@@ -326,16 +325,14 @@ class ChatGPTContentScript {
 
   // Extract conversation data for export using enhanced parser
   private async extractConversationData(): Promise<any> {
-    console.log('Starting conversation data extraction...');
     
     // Use basic extraction (enhanced parser has import issues in content script)
     const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
     const conversationTitle = this.getConversationTitle();
 
-    console.log('Found messages:', messages.length);
 
     const messageData = Array.from(messages)
-      .map((messageElement) => {
+      .map((messageElement, index) => {
         const isUser = this.matchesAnySelector(
           messageElement,
           CHATGPT_CONFIG.selectors.userMessage
@@ -345,8 +342,26 @@ class ChatGPTContentScript {
           CHATGPT_CONFIG.selectors.assistantMessage
         );
 
-        const role = isUser ? 'user' : isAssistant ? 'assistant' : 'unknown';
+        // Check for data-message-author-role attribute
+        const authorRole = messageElement.getAttribute('data-message-author-role');
+        
+        // More robust role detection
+        let role: string;
+        if (authorRole === 'user') {
+          role = 'user';
+        } else if (authorRole === 'assistant') {
+          role = 'assistant';
+        } else if (isUser) {
+          role = 'user';
+        } else if (isAssistant) {
+          role = 'assistant';
+        } else {
+          // Fallback: alternate between user and assistant starting with user
+          role = index % 2 === 0 ? 'user' : 'assistant';
+        }
+
         const content = messageElement.textContent?.trim() || '';
+
 
         return {
           role,
@@ -356,7 +371,6 @@ class ChatGPTContentScript {
       })
       .filter((msg) => msg.content.length > 0);
 
-    console.log('Extracted message data:', messageData.length, 'messages');
 
     const result = {
       title: conversationTitle,
@@ -366,7 +380,6 @@ class ChatGPTContentScript {
       extractedAt: new Date().toISOString(),
     };
 
-    console.log('Final conversation data:', result);
     return result;
   }
 
@@ -374,7 +387,7 @@ class ChatGPTContentScript {
   private async insertTextToInput(text: string): Promise<boolean> {
     try {
       const inputElement = this.findElement(
-        CHATGPT_CONFIG.selectors.textInput
+        [...CHATGPT_CONFIG.selectors.textInput]
       ) as HTMLTextAreaElement;
 
       if (!inputElement) {
