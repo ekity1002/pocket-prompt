@@ -27,7 +27,7 @@ async function initializePopup(): Promise<void> {
   try {
     // Initialize DOM elements
     initializeDOMElements();
-    
+
     // Setup event listeners
     setupEventListeners();
 
@@ -318,9 +318,9 @@ async function exportChatGPTConversation(): Promise<void> {
 
     const message: ChromeMessage = {
       type: 'EXPORT_CONVERSATION',
-      data: { 
+      data: {
         format: 'markdown',
-        tabId: currentTab.id
+        tabId: currentTab.id,
       },
       requestId: generateRequestId(),
       timestamp: new Date(),
@@ -330,13 +330,16 @@ async function exportChatGPTConversation(): Promise<void> {
     console.log('Message data details:', {
       tabId: message.data.tabId,
       format: message.data.format,
-      type: message.type
+      type: message.type,
     });
     const response = await sendMessageToBackground(message);
     console.log('Export response:', response);
     console.log('Error details:', response.error);
 
-    if (response.success) {
+    if (response.success && response.data?.downloadInfo) {
+      const downloadInfo = response.data.downloadInfo;
+      toast.success(`${downloadInfo.filename} をダウンロードしました`);
+    } else if (response.success) {
       toast.success('会話をエクスポートしました');
     } else {
       const errorMessage = response.error?.message || 'エクスポートに失敗しました';
@@ -380,7 +383,7 @@ function setupPromptInteractions(
   prompts: Array<{ id: string; title: string; content: string }>
 ): void {
   if (!promptList) return;
-  
+
   const promptItems = promptList.querySelectorAll('.prompt-item');
 
   for (const item of promptItems) {

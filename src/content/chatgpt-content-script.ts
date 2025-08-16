@@ -134,7 +134,7 @@ class ChatGPTContentScript {
           mainElement: !!mainElement,
           hasMessages: !!hasMessages,
           hasAnyMain: !!hasAnyMain,
-          readyState: document.readyState
+          readyState: document.readyState,
         });
 
         // More lenient conditions - just need a main element or complete state
@@ -326,57 +326,48 @@ class ChatGPTContentScript {
 
   // Extract conversation data for export using enhanced parser
   private async extractConversationData(): Promise<any> {
-    try {
-      // Use the enhanced conversation parser for better data extraction
-      const { ConversationExporter } = await import('./conversation-exporter');
-      const exporter = new ConversationExporter();
+    console.log('Starting conversation data extraction...');
+    
+    // Use basic extraction (enhanced parser has import issues in content script)
+    const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
+    const conversationTitle = this.getConversationTitle();
 
-      const exportData = await exporter.exportConversation({
-        format: 'json',
-        includeMetadata: true,
-        includeTimestamps: true,
-        validateData: true,
-        prettify: false,
-      });
+    console.log('Found messages:', messages.length);
 
-      return exportData.data;
-    } catch (error) {
-      console.warn('Enhanced parser failed, falling back to basic extraction:', error);
+    const messageData = Array.from(messages)
+      .map((messageElement) => {
+        const isUser = this.matchesAnySelector(
+          messageElement,
+          CHATGPT_CONFIG.selectors.userMessage
+        );
+        const isAssistant = this.matchesAnySelector(
+          messageElement,
+          CHATGPT_CONFIG.selectors.assistantMessage
+        );
 
-      // Fallback to basic extraction
-      const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
-      const conversationTitle = this.getConversationTitle();
+        const role = isUser ? 'user' : isAssistant ? 'assistant' : 'unknown';
+        const content = messageElement.textContent?.trim() || '';
 
-      const messageData = Array.from(messages)
-        .map((messageElement) => {
-          const isUser = this.matchesAnySelector(
-            messageElement,
-            CHATGPT_CONFIG.selectors.userMessage
-          );
-          const isAssistant = this.matchesAnySelector(
-            messageElement,
-            CHATGPT_CONFIG.selectors.assistantMessage
-          );
+        return {
+          role,
+          content,
+          timestamp: new Date().toISOString(),
+        };
+      })
+      .filter((msg) => msg.content.length > 0);
 
-          const role = isUser ? 'user' : isAssistant ? 'assistant' : 'unknown';
-          const content = messageElement.textContent?.trim() || '';
+    console.log('Extracted message data:', messageData.length, 'messages');
 
-          return {
-            role,
-            content,
-            timestamp: new Date().toISOString(),
-          };
-        })
-        .filter((msg) => msg.content.length > 0);
+    const result = {
+      title: conversationTitle,
+      messages: messageData,
+      url: window.location.href,
+      site: CHATGPT_CONFIG.site,
+      extractedAt: new Date().toISOString(),
+    };
 
-      return {
-        title: conversationTitle,
-        messages: messageData,
-        url: window.location.href,
-        site: CHATGPT_CONFIG.site,
-        extractedAt: new Date().toISOString(),
-      };
-    }
+    console.log('Final conversation data:', result);
+    return result;
   }
 
   // Insert text into ChatGPT input
@@ -483,15 +474,15 @@ export async function initializeChatGPTHandler(): Promise<void> {
   }
 
   console.log('Initializing ChatGPT Content Script handler');
-  
+
   if (document.readyState === 'loading') {
     await new Promise((resolve) => {
       document.addEventListener('DOMContentLoaded', resolve);
     });
   }
-  
+
   contentScript = new ChatGPTContentScript();
-  
+
   // Cleanup on unload
   window.addEventListener('beforeunload', () => {
     contentScript?.destroy();
