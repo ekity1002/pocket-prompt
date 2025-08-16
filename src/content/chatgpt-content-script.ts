@@ -8,7 +8,7 @@ console.log('ChatGPT Content Script loaded');
 // ChatGPT site configuration
 const CHATGPT_CONFIG = {
   site: 'chatgpt' as SupportedAISite,
-  domain: 'chat.openai.com',
+  domain: 'chatgpt.com',
   selectors: {
     // Main conversation container
     conversationContainer: '[data-testid^="conversation-turn"]',
@@ -99,7 +99,7 @@ class ChatGPTContentScript {
     const pathname = window.location.pathname;
 
     // Primary check: exact domain match
-    if (hostname === CHATGPT_CONFIG.domain) {
+    if (hostname === CHATGPT_CONFIG.domain || hostname === 'chat.openai.com') {
       return true;
     }
 
@@ -120,15 +120,25 @@ class ChatGPTContentScript {
   private async waitForPageReady(): Promise<void> {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        reject(new Error('Page ready timeout'));
-      }, 10000); // 10 second timeout
+        console.warn('Page ready timeout - proceeding anyway');
+        resolve(); // Resolve instead of reject to continue initialization
+      }, 5000); // Reduced timeout to 5 seconds
 
       const checkReady = (): void => {
-        // Check if main conversation area exists
+        // Check if main conversation area exists or if page is complete
         const mainElement = this.findElement(CHATGPT_CONFIG.selectors.conversationMain);
         const hasMessages = this.findElement(CHATGPT_CONFIG.selectors.messages[0]);
+        const hasAnyMain = document.querySelector('main');
 
-        if (mainElement && (hasMessages || document.readyState === 'complete')) {
+        console.log('DEBUG: Page ready check:', {
+          mainElement: !!mainElement,
+          hasMessages: !!hasMessages,
+          hasAnyMain: !!hasAnyMain,
+          readyState: document.readyState
+        });
+
+        // More lenient conditions - just need a main element or complete state
+        if (hasAnyMain || document.readyState === 'complete') {
           clearTimeout(timeout);
           resolve();
         } else {
@@ -462,20 +472,29 @@ class ChatGPTContentScript {
   }
 }
 
-// Initialize content script
+// Content script instance
 let contentScript: ChatGPTContentScript | null = null;
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    contentScript = new ChatGPTContentScript();
-  });
-} else {
+// Export initialization function for dynamic import
+export async function initializeChatGPTHandler(): Promise<void> {
+  if (contentScript) {
+    console.log('ChatGPT Content Script already initialized');
+    return;
+  }
+
+  console.log('Initializing ChatGPT Content Script handler');
+  
+  if (document.readyState === 'loading') {
+    await new Promise((resolve) => {
+      document.addEventListener('DOMContentLoaded', resolve);
+    });
+  }
+  
   contentScript = new ChatGPTContentScript();
+  
+  // Cleanup on unload
+  window.addEventListener('beforeunload', () => {
+    contentScript?.destroy();
+    contentScript = null;
+  });
 }
-
-// Cleanup on unload
-window.addEventListener('beforeunload', () => {
-  contentScript?.destroy();
-});
-
-export {};

@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
-export default defineConfig(({ command, mode }) => {
+export default defineConfig(({ mode }) => {
   const isProduction = mode === 'production';
   const isDevelopment = mode === 'development';
 
@@ -21,15 +21,22 @@ export default defineConfig(({ command, mode }) => {
           'options/options-styles': resolve(__dirname, 'src/options/options.css'),
           'content/content': resolve(__dirname, 'src/content/index.ts'),
         },
-        output: {
-          entryFileNames: '[name].js',
-          chunkFileNames: isDevelopment ? 'chunks/[name].js' : 'chunks/[name]-[hash].js',
-          assetFileNames: isDevelopment ? 'assets/[name].[ext]' : 'assets/[name]-[hash].[ext]',
-        },
+        output: [
+          {
+            entryFileNames: '[name].js',
+            chunkFileNames: isDevelopment ? 'chunks/[name].js' : 'chunks/[name]-[hash].js',
+            assetFileNames: isDevelopment ? 'assets/[name].[ext]' : 'assets/[name]-[hash].[ext]',
+            format: 'es', // ES Module format for Manifest V3
+            inlineDynamicImports: false,
+            preserveModules: false,
+          }
+        ],
+        external: [], // Don't externalize any dependencies for Chrome extension
       },
       minify: isProduction,
       sourcemap: true,
       target: 'es2022',
+      lib: false, // Don't use library mode - build as application
     },
     resolve: {
       alias: {
@@ -48,10 +55,6 @@ export default defineConfig(({ command, mode }) => {
     server: {
       port: 3000,
       hmr: false, // Disable HMR for Chrome extension
-      watch: {
-        // Watch for changes in Chrome extension files
-        include: ['src/**/*', 'public/**/*', 'tailwind.config.js', 'postcss.config.js'],
-      },
     },
     // Copy static files like manifest.json
     publicDir: 'public',
