@@ -109,3 +109,5 @@ Thumbs.db
 # Volta (Node.js version manager)
 # Keep volta section in package.json, ignore lock files
 .volta/
+
+.serena

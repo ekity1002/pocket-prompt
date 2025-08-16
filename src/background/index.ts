@@ -35,14 +35,18 @@ chrome.runtime.onInstalled.addListener((details) => {
 // Handle messages from popup, options, and content scripts
 chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendResponse) => {
   console.log('Background received message:', message.type);
+  console.log('Full message:', message);
+  console.log('Sender:', sender);
 
   // Handle async responses
   handleMessage(message, sender)
     .then((response: ChromeResponse) => {
+      console.log('Background sending response:', response);
       sendResponse(response);
     })
     .catch((error: Error) => {
-      sendResponse({
+      console.error('Background error:', error);
+      const errorResponse = {
         success: false,
         error: {
           code: 'BACKGROUND_ERROR',
@@ -50,7 +54,9 @@ chrome.runtime.onMessage.addListener((message: ChromeMessage, sender, sendRespon
         },
         timestamp: new Date(),
         requestId: message.requestId,
-      });
+      };
+      console.log('Background sending error response:', errorResponse);
+      sendResponse(errorResponse);
     });
 
   // Return true to indicate we'll respond asynchronously
@@ -83,6 +89,7 @@ async function handleMessage(
       return await handleSearchPrompts(message);
 
     case 'EXPORT_CONVERSATION':
+      console.log('About to call handleExportConversation');
       return await handleExportConversation(message, sender);
 
     case 'SAVE_CONVERSATION':
@@ -131,7 +138,18 @@ async function handleExportConversation(
   sender: chrome.runtime.MessageSender
 ): Promise<ChromeResponse> {
   try {
-    if (!sender.tab?.id) {
+    console.log('handleExportConversation called with:', {
+      messageData: message.data,
+      senderTab: sender.tab,
+      senderTabId: sender.tab?.id,
+    });
+
+    // Try to get tab ID from sender first, then from message data
+    const tabId = sender.tab?.id || (message.data as any)?.tabId;
+
+    console.log('Resolved tabId:', tabId);
+
+    if (!tabId) {
       throw new Error('No tab ID available for content script communication');
     }
 
@@ -140,10 +158,11 @@ async function handleExportConversation(
       autoSave?: boolean;
       tags?: string[];
       isFavorite?: boolean;
+      tabId?: number;
     }) || { format: 'json' as ExportFormat, autoSave: false };
 
     // Request conversation data from content script
-    const conversationResponse = await chrome.tabs.sendMessage(sender.tab.id, {
+    const conversationResponse = await chrome.tabs.sendMessage(tabId, {
       type: 'EXPORT_CONVERSATION',
       data: exportOptions,
       timestamp: new Date(),
@@ -156,31 +175,88 @@ async function handleExportConversation(
       );
     }
 
+    const conversationData = conversationResponse.data;
+
+    // Format data based on export format
+    let formattedData: string;
+    let filename: string;
+    let mimeType: string;
+
+    const title = conversationData.title || 'ChatGPT_Conversation';
+    const timestamp = new Date().toISOString().slice(0, 10);
+
+    switch (exportOptions.format) {
+      case 'markdown':
+        formattedData = formatAsMarkdown(conversationData);
+        filename = `${title}_${timestamp}.md`;
+        mimeType = 'text/markdown';
+        break;
+      case 'json':
+        formattedData = JSON.stringify(conversationData, null, 2);
+        filename = `${title}_${timestamp}.json`;
+        mimeType = 'application/json';
+        break;
+      case 'txt':
+        formattedData = formatAsPlainText(conversationData);
+        filename = `${title}_${timestamp}.txt`;
+        mimeType = 'text/plain';
+        break;
+      default:
+        formattedData = JSON.stringify(conversationData, null, 2);
+        filename = `${title}_${timestamp}.json`;
+        mimeType = 'application/json';
+    }
+
+    // Create data URL using base64 encoding for better compatibility
+    const encodedData = btoa(unescape(encodeURIComponent(formattedData)));
+    const dataUrl = `data:${mimeType};charset=utf-8;base64,${encodedData}`;
+
+    try {
+      // Use Chrome Downloads API to download from data URL
+      await chrome.downloads.download({
+        url: dataUrl,
+        filename: filename,
+        saveAs: true,
+      });
+
+      console.log('Download initiated successfully:', filename);
+    } catch (downloadError) {
+      console.error('Download failed:', downloadError);
+      throw new Error('ファイルのダウンロードに失敗しました');
+    }
+
     // Auto-save to storage if requested
-    if (exportOptions.autoSave && conversationResponse.data) {
+    if (exportOptions.autoSave && conversationData) {
       const saveResult = await conversationManager.saveConversation(
-        conversationResponse.data as ConversationExport,
+        conversationData as ConversationExport,
         exportOptions.tags || [],
         exportOptions.isFavorite || false
       );
 
-      return {
+      const response: ChromeResponse = {
         success: saveResult.success,
         data: {
-          exportData: conversationResponse.data,
+          exportData: conversationData,
           saveResult,
+          downloadInfo: { filename, format: exportOptions.format },
         },
-        error: saveResult.success
-          ? undefined
-          : { code: 'SAVE_ERROR', message: saveResult.error || 'Save failed' },
         timestamp: new Date(),
         requestId: message.requestId,
       };
+
+      if (!saveResult.success) {
+        response.error = { code: 'SAVE_ERROR', message: saveResult.error || 'Save failed' };
+      }
+
+      return response;
     }
 
     return {
       success: true,
-      data: conversationResponse.data,
+      data: {
+        exportData: conversationData,
+        downloadInfo: { filename, format: exportOptions.format },
+      },
       timestamp: new Date(),
       requestId: message.requestId,
     };
@@ -189,6 +265,46 @@ async function handleExportConversation(
       `Failed to export conversation: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
   }
+}
+
+// Format conversation data as Markdown
+function formatAsMarkdown(conversationData: any): string {
+  const title = conversationData.title || 'ChatGPT Conversation';
+  const timestamp = new Date().toISOString();
+
+  let markdown = `# ${title}\n\n`;
+  markdown += `**Exported:** ${timestamp}\n`;
+  markdown += `**Source:** ${conversationData.url || 'Unknown'}\n\n`;
+
+  if (conversationData.messages && Array.isArray(conversationData.messages)) {
+    conversationData.messages.forEach((message: any) => {
+      const role = message.role === 'user' ? 'User' : 'Assistant';
+      markdown += `## ${role}\n\n${message.content}\n\n`;
+    });
+  }
+
+  return markdown;
+}
+
+// Format conversation data as plain text
+function formatAsPlainText(conversationData: any): string {
+  const title = conversationData.title || 'ChatGPT Conversation';
+  const timestamp = new Date().toISOString();
+
+  let text = `${title}\n`;
+  text += `Exported: ${timestamp}\n`;
+  text += `Source: ${conversationData.url || 'Unknown'}\n\n`;
+  text += '='.repeat(50) + '\n\n';
+
+  if (conversationData.messages && Array.isArray(conversationData.messages)) {
+    conversationData.messages.forEach((message: any) => {
+      const role = message.role === 'user' ? 'User' : 'Assistant';
+      text += `${role}:\n${message.content}\n\n`;
+      text += '-'.repeat(30) + '\n\n';
+    });
+  }
+
+  return text;
 }
 
 // Handle conversation saving
@@ -210,15 +326,18 @@ async function handleSaveConversation(message: ChromeMessage): Promise<ChromeRes
       saveData.isFavorite || false
     );
 
-    return {
+    const response: ChromeResponse = {
       success: result.success,
       data: { id: result.id },
-      error: result.success
-        ? undefined
-        : { code: 'SAVE_ERROR', message: result.error || 'Save failed' },
       timestamp: new Date(),
       requestId: message.requestId,
     };
+
+    if (!result.success) {
+      response.error = { code: 'SAVE_ERROR', message: result.error || 'Save failed' };
+    }
+
+    return response;
   } catch (error) {
     throw new Error(
       `Failed to save conversation: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -260,15 +379,18 @@ async function handleUpdateConversation(message: ChromeMessage): Promise<ChromeR
 
     const result = await conversationManager.updateConversation(updateData.id, updateData.updates);
 
-    return {
+    const response: ChromeResponse = {
       success: result.success,
       data: { updated: result.success },
-      error: result.success
-        ? undefined
-        : { code: 'UPDATE_ERROR', message: result.error || 'Update failed' },
       timestamp: new Date(),
       requestId: message.requestId,
     };
+
+    if (!result.success) {
+      response.error = { code: 'UPDATE_ERROR', message: result.error || 'Update failed' };
+    }
+
+    return response;
   } catch (error) {
     throw new Error(
       `Failed to update conversation: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -287,15 +409,18 @@ async function handleDeleteConversation(message: ChromeMessage): Promise<ChromeR
 
     const result = await conversationManager.deleteConversation(deleteData.id);
 
-    return {
+    const response: ChromeResponse = {
       success: result.success,
       data: { deleted: result.success },
-      error: result.success
-        ? undefined
-        : { code: 'DELETE_ERROR', message: result.error || 'Delete failed' },
       timestamp: new Date(),
       requestId: message.requestId,
     };
+
+    if (!result.success) {
+      response.error = { code: 'DELETE_ERROR', message: result.error || 'Delete failed' };
+    }
+
+    return response;
   } catch (error) {
     throw new Error(
       `Failed to delete conversation: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -356,13 +481,18 @@ async function handleBulkOperations(message: ChromeMessage): Promise<ChromeRespo
 
     const result = await conversationManager.bulkOperations(operations);
 
-    return {
+    const response: ChromeResponse = {
       success: result.success,
       data: result,
-      error: result.success ? undefined : { code: 'BULK_ERROR', message: 'Bulk operation failed' },
       timestamp: new Date(),
       requestId: message.requestId,
     };
+
+    if (!result.success) {
+      response.error = { code: 'BULK_ERROR', message: 'Bulk operation failed' };
+    }
+
+    return response;
   } catch (error) {
     throw new Error(
       `Failed to perform bulk operations: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -482,7 +612,7 @@ async function handleAutoSaveConversation(tabId: number, syncData: any): Promise
 async function isAutoSaveEnabled(): Promise<boolean> {
   try {
     const result = await chrome.storage.local.get('settings');
-    return result.settings?.autoSave || false;
+    return result['settings']?.autoSave || false;
   } catch {
     return false; // Default disabled
   }

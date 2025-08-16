@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Chrome extension for seamless prompt management and sharing",
 
-  "permissions": ["storage", "activeTab", "clipboardWrite"],
+  "permissions": ["storage", "activeTab", "clipboardWrite", "downloads"],
 
   "optional_permissions": ["identity"],
 
@@ -32,12 +32,13 @@
   "content_scripts": [
     {
       "matches": [
-        "https://chat.openai.com/*",
+        "https://chatgpt.com/*",
         "https://claude.ai/*",
         "https://gemini.google.com/*"
       ],
       "js": ["content/content.js"],
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "type": "module"
     }
   ],
 
@@ -53,6 +54,7 @@
   },
 
   "host_permissions": [
+    "https://chatgpt.com/*",
     "https://chat.openai.com/*",
     "https://claude.ai/*",
     "https://gemini.google.com/*"
