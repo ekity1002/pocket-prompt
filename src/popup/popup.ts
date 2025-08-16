@@ -193,8 +193,7 @@ async function copyPrompt(promptId: string): Promise<void> {
         }
       }
 
-      // Update usage statistics
-      await loadPrompts();
+      // Note: Removed loadPrompts() to avoid reordering prompts on click
     } else {
       const errorMessage = response.error?.message || 'コピーに失敗しました';
       toast.error(errorMessage);
@@ -264,6 +263,71 @@ async function deletePrompt(promptId: string): Promise<void> {
     const errorMessage = error instanceof Error ? error.message : 'プロンプトの削除に失敗しました';
     toast.error(errorMessage);
     throw error;
+  }
+}
+
+async function editPrompt(promptId: string): Promise<void> {
+  try {
+    // Get prompt data from background
+    const message: ChromeMessage = {
+      type: 'GET_PROMPT',
+      data: { id: promptId },
+      requestId: generateRequestId(),
+      timestamp: new Date(),
+    };
+
+    const response = await sendMessageToBackground(message);
+
+    if (response.success && response.data) {
+      const promptData = response.data as {
+        id: string;
+        title: string;
+        content: string;
+        tags: string[];
+      };
+
+      // Create modal with existing data
+      const modal = new PromptCreateModal({
+        onSave: async (updatedPromptData: CreatePromptRequest) => {
+          const updateMessage: ChromeMessage = {
+            type: 'UPDATE_PROMPT',
+            data: {
+              id: promptId,
+              updates: updatedPromptData,
+            },
+            requestId: generateRequestId(),
+            timestamp: new Date(),
+          };
+
+          const updateResponse = await sendMessageToBackground(updateMessage);
+
+          if (!updateResponse.success) {
+            const errorMessage = updateResponse.error?.message || 'プロンプトの更新に失敗しました';
+            throw new Error(errorMessage);
+          }
+
+          // Reload prompts to reflect changes
+          await loadPrompts();
+          toast.success('プロンプトを更新しました');
+        },
+        onCancel: () => {
+          console.log('Prompt edit cancelled');
+        },
+        initialData: {
+          title: promptData.title,
+          content: promptData.content,
+          tags: promptData.tags,
+        },
+      });
+
+      modal.show();
+    } else {
+      const errorMessage = response.error?.message || 'プロンプトの取得に失敗しました';
+      toast.error(errorMessage);
+    }
+  } catch (error) {
+    console.error('Failed to edit prompt:', error);
+    toast.error('プロンプトの編集に失敗しました');
   }
 }
 
@@ -400,7 +464,7 @@ function setupPromptInteractions(
       variant: 'inline',
     });
 
-    // Create delete button for each prompt item
+    // Create delete button for each prompt item  
     const deleteButton = new DeleteButton({
       promptId,
       promptTitle: prompt.title,
@@ -412,31 +476,33 @@ function setupPromptInteractions(
     copyButtons.set(promptId, copyButton);
     deleteButtons.set(promptId, deleteButton);
 
-    // Append buttons to prompt actions container
+    // Append buttons to prompt actions container in the correct order
     const actionsContainer = item.querySelector('.prompt-actions');
     if (actionsContainer) {
-      actionsContainer.appendChild(copyButton.getElement());
+      // Add delete button first, then copy button (delete button next to copy)
       actionsContainer.appendChild(deleteButton.getElement());
+      actionsContainer.appendChild(copyButton.getElement());
     }
 
-    // Add keyboard navigation support
+    // Add keyboard navigation support  
     item.addEventListener('keydown', (e: Event) => {
       const keyboardEvent = e as KeyboardEvent;
       if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
         keyboardEvent.preventDefault();
-        copyPrompt(promptId);
+        // Change behavior: open edit modal instead of copying
+        editPrompt(promptId);
       }
     });
 
-    // Remove click event from prompt item to avoid conflicts
+    // Change click event to open edit modal instead of copying
     item.addEventListener('click', (e) => {
-      // Only trigger copy if not clicking on buttons
+      // Only trigger edit if not clicking on buttons
       if (
         !e.target ||
         (!(e.target as Element).closest('.copy-button') &&
           !(e.target as Element).closest('.delete-button'))
       ) {
-        copyPrompt(promptId);
+        editPrompt(promptId);
       }
     });
   }

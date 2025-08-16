@@ -88,6 +88,9 @@ async function handleMessage(
     case 'SEARCH_PROMPTS':
       return await handleSearchPrompts(message);
 
+    case 'GET_PROMPT':
+      return await handleGetPrompt(message);
+
     case 'EXPORT_CONVERSATION':
       console.log('About to call handleExportConversation');
       return await handleExportConversation(message, sender);
@@ -936,6 +939,59 @@ async function handleSearchPrompts(message: ChromeMessage): Promise<ChromeRespon
       error: {
         code: 'SEARCH_PROMPTS_ERROR',
         message: error instanceof Error ? error.message : 'Failed to search prompts',
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  }
+}
+
+/**
+ * Handle GET_PROMPT message - get single prompt by ID
+ */
+async function handleGetPrompt(message: ChromeMessage): Promise<ChromeResponse> {
+  try {
+    const requestData = message.data as { id: string };
+
+    if (!requestData?.id) {
+      throw new Error('No prompt ID provided');
+    }
+
+    const prompt = await promptManager.getPrompt(requestData.id);
+    
+    if (!prompt) {
+      return {
+        success: false,
+        error: {
+          code: 'PROMPT_NOT_FOUND',
+          message: 'Prompt not found',
+        },
+        timestamp: new Date(),
+        requestId: message.requestId,
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        id: prompt.id,
+        title: prompt.title,
+        content: prompt.content,
+        tags: prompt.tags,
+        createdAt: prompt.createdAt,
+        updatedAt: prompt.updatedAt,
+        usageCount: prompt.metadata.usageCount,
+        lastUsedAt: prompt.metadata.lastUsedAt,
+      },
+      timestamp: new Date(),
+      requestId: message.requestId,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        code: 'GET_PROMPT_ERROR',
+        message: error instanceof Error ? error.message : 'Failed to get prompt',
       },
       timestamp: new Date(),
       requestId: message.requestId,
