@@ -167,9 +167,7 @@
 
     /* Copy Button Styles */
     .copy-button {
-      position: absolute;
-      top: 8px;
-      right: 8px;
+      position: relative;
       width: 32px;
       height: 32px;
       border: none;
@@ -234,6 +232,71 @@
       0% { transform: scale(1); opacity: 1; }
       50% { transform: scale(1.2); opacity: 0.8; }
       100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Prompt Actions Container */
+    .prompt-actions {
+      display: flex;
+      gap: 4px;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .prompt-item:hover .prompt-actions,
+    .prompt-item:focus .prompt-actions {
+      opacity: 1;
+    }
+
+    /* Copy Button Inline Variant */
+    .copy-button--inline {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-button--inline:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    /* Delete Button Inline Support */
+    .delete-button-inline {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #e53e3e;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #e53e3e;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .delete-button-inline:hover {
+      background: #e53e3e;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     /* Toast Notification Styles */

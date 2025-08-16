@@ -77,7 +77,8 @@
     }
     
     .prompt-item {
-      padding: 12px;
+      position: relative;
+      padding: 12px 48px 12px 12px;
       margin-bottom: 8px;
       background: white;
       border: 1px solid #e0e0e0;
@@ -89,6 +90,12 @@
     .prompt-item:hover {
       border-color: #1976d2;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .prompt-item:focus {
+      outline: none;
+      border-color: #1976d2;
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
     }
     
     .prompt-title {
@@ -103,6 +110,15 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      padding-right: 8px;
+    }
+
+    .prompt-meta {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+      display: flex;
+      gap: 12px;
     }
     
     .empty-state {
@@ -126,6 +142,71 @@
     
     .add-prompt-btn:hover {
       background: #1565c0;
+    }
+
+    /* Prompt Actions Container */
+    .prompt-actions {
+      display: flex;
+      gap: 4px;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .prompt-item:hover .prompt-actions,
+    .prompt-item:focus .prompt-actions {
+      opacity: 1;
+    }
+
+    /* Copy Button Inline Variant */
+    .copy-button--inline {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(4px);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .copy-button--inline:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 1);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+
+    /* Delete Button Inline Support */
+    .delete-button-inline {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #e53e3e;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #e53e3e;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .delete-button-inline:hover {
+      background: #e53e3e;
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
   </style>
 </head>
