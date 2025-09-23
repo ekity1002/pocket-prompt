@@ -242,7 +242,11 @@ export class ConversationExporter {
       .replace(/\u00A0/g, ' ') // Replace non-breaking spaces
       .replace(/\s+$/gm, '') // Remove trailing whitespace
       .replace(/^\s+$/gm, '') // Remove whitespace-only lines
-      .replace(/\n{3,}/g, '\n\n') // Limit consecutive line breaks
+      .replace(/\n{3,}/g, '\n\n') // Limit consecutive line breaks to max 2
+      .replace(/(\n\s*){3,}/g, '\n\n') // Remove excessive whitespace-separated line breaks
+      .replace(/(\d+\.)\s*\n+\s*/g, '$1 ') // Fix numbered list formatting
+      .replace(/([•\-\*])\s*\n+\s*/g, '$1 ') // Fix bullet point formatting
+      .replace(/\n\s*\n\s*\n/g, '\n\n') // Clean up any remaining triple line breaks
       .trim();
   }
 

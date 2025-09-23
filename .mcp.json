@@ -8,6 +8,11 @@
         "--allow-npx"
       ],
       "env": {}
+    },
+    "codex": {
+      "type": "stdio",
+      "command": "codex",
+      "args": ["mcp"]
     }
   }
 }
