@@ -208,7 +208,6 @@ async function copyPrompt(promptId: string): Promise<void> {
 }
 
 function createNewPrompt(): void {
-
   const modal = new PromptCreateModal({
     onSave: async (promptData: CreatePromptRequest) => {
       const message: ChromeMessage = {
@@ -391,7 +390,12 @@ async function exportChatGPTConversation(): Promise<void> {
 
     const response = await sendMessageToBackground(message);
 
-    if (response.success && response.data && typeof response.data === 'object' && 'downloadInfo' in response.data) {
+    if (
+      response.success &&
+      response.data &&
+      typeof response.data === 'object' &&
+      'downloadInfo' in response.data
+    ) {
       const downloadInfo = (response.data as { downloadInfo: { filename: string } }).downloadInfo;
       toast.success(`${downloadInfo.filename} をダウンロードしました`);
     } else if (response.success) {
@@ -455,7 +459,7 @@ function setupPromptInteractions(
       variant: 'inline',
     });
 
-    // Create delete button for each prompt item  
+    // Create delete button for each prompt item
     const deleteButton = new DeleteButton({
       promptId,
       promptTitle: prompt.title,
@@ -475,7 +479,7 @@ function setupPromptInteractions(
       actionsContainer.appendChild(copyButton.getElement());
     }
 
-    // Add keyboard navigation support  
+    // Add keyboard navigation support
     item.addEventListener('keydown', (e: Event) => {
       const keyboardEvent = e as KeyboardEvent;
       if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {

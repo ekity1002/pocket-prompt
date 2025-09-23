@@ -206,7 +206,6 @@ async function handleExportConversation(
         filename: filename,
         saveAs: true,
       });
-
     } catch (downloadError) {
       console.error('Download failed:', downloadError);
       throw new Error('ファイルのダウンロードに失敗しました');
@@ -942,7 +941,7 @@ async function handleGetPrompt(message: ChromeMessage): Promise<ChromeResponse> 
     }
 
     const prompt = await promptManager.getPrompt(requestData.id);
-    
+
     if (!prompt) {
       return {
         success: false,
