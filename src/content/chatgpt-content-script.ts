@@ -175,7 +175,6 @@ class ChatGPTContentScript {
 
   // Handle messages from background script
   private async handleMessage(message: ChromeMessage): Promise<ChromeResponse> {
-
     switch (message.type) {
       case 'GET_PAGE_INFO':
         return {
@@ -325,11 +324,9 @@ class ChatGPTContentScript {
 
   // Extract conversation data for export using enhanced parser
   private async extractConversationData(): Promise<any> {
-    
     // Use basic extraction (enhanced parser has import issues in content script)
     const messages = document.querySelectorAll(CHATGPT_CONFIG.selectors.messages[0]);
     const conversationTitle = this.getConversationTitle();
-
 
     const messageData = Array.from(messages)
       .map((messageElement, index) => {
@@ -344,7 +341,7 @@ class ChatGPTContentScript {
 
         // Check for data-message-author-role attribute
         const authorRole = messageElement.getAttribute('data-message-author-role');
-        
+
         // More robust role detection
         let role: string;
         if (authorRole === 'user') {
@@ -362,7 +359,6 @@ class ChatGPTContentScript {
 
         const content = messageElement.textContent?.trim() || '';
 
-
         return {
           role,
           content,
@@ -370,7 +366,6 @@ class ChatGPTContentScript {
         };
       })
       .filter((msg) => msg.content.length > 0);
-
 
     const result = {
       title: conversationTitle,
@@ -386,9 +381,9 @@ class ChatGPTContentScript {
   // Insert text into ChatGPT input
   private async insertTextToInput(text: string): Promise<boolean> {
     try {
-      const inputElement = this.findElement(
-        [...CHATGPT_CONFIG.selectors.textInput]
-      ) as HTMLTextAreaElement;
+      const inputElement = this.findElement([
+        ...CHATGPT_CONFIG.selectors.textInput,
+      ]) as HTMLTextAreaElement;
 
       if (!inputElement) {
         throw new Error('ChatGPT input element not found');

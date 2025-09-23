@@ -47,7 +47,7 @@ export class PromptCreateModal {
 
   constructor(options: PromptCreateModalOptions) {
     this.options = options;
-    
+
     // Set initial data if provided
     if (options.initialData) {
       this.state.title = options.initialData.title;
@@ -55,7 +55,7 @@ export class PromptCreateModal {
       this.state.tags = [...options.initialData.tags];
       this.state.isDirty = false; // Not dirty since it's initial data
     }
-    
+
     this.createElement();
     this.setInitialValues();
     this.setupEventListeners();
